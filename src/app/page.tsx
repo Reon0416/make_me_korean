@@ -263,16 +263,6 @@ export default function Home() {
         <Link className="reviewLink" href="/mistakes">
           間違えた単語ページへ
         </Link>
-        {mistakes.recent.length ? (
-          <ul>
-            {mistakes.recent.map((item) => (
-              <li key={`${item.rowNumber}-${item.korean}`}>
-                <strong>{item.korean}</strong>
-                <span>{item.japanese}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
       </aside>
     </main>
   );
