@@ -1,26 +1,19 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { AnswerResult, QuizMode, QuizQuestion } from '@/lib/types';
+import type { AnswerResult, MistakeItem, QuizMode, QuizQuestion } from '@/lib/types';
 
 type MistakeSummary = {
   count: number;
-  recent: Array<{
-    timestamp: string;
-    mode: string;
-    question: string;
-    userAnswer: string;
-    korean: string;
-    reading: string;
-    japanese: string;
-  }>;
+  recent: MistakeItem[];
 };
 
 const modes: Array<{ value: QuizMode; label: string }> = [
   { value: 'mixed', label: 'ミックス' },
-  { value: 'ko_to_ja', label: '韓国語 → 日本語' },
-  { value: 'ja_to_ko', label: '日本語 → ハングル' },
+  { value: 'ko_to_ja', label: '韓国語→日本語' },
+  { value: 'ja_to_ko', label: '日本語→ハングル' },
 ];
 
 export default function Home() {
@@ -44,7 +37,7 @@ export default function Home() {
       const data = await response.json();
       if (response.ok) setMistakes(data);
     } catch {
-      // 履歴取得に失敗してもクイズ進行は止めない。
+      // 履歴の取得に失敗しても、クイズ本体は続けられるようにする。
     }
   }, []);
 
@@ -60,7 +53,7 @@ export default function Home() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || '問題を取得できませんでした。');
       setQuestion(data);
-      setStatus('テンポよく進めていきましょう');
+      setStatus('3つの選択肢から選んでください。');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '問題を取得できませんでした。');
     } finally {
@@ -79,7 +72,7 @@ export default function Home() {
 
   function speakKorean(text: string) {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      setStatus('このブラウザは音声読み上げに対応していません');
+      setStatus('このブラウザは音声読み上げに対応していません。');
       return;
     }
 
@@ -95,10 +88,7 @@ export default function Home() {
   }
 
   async function submit(userAnswer: string) {
-    if (!question || result || !userAnswer.trim()) {
-      if (!userAnswer.trim()) setStatus('回答を入力してください');
-      return;
-    }
+    if (!question || result || !userAnswer.trim()) return;
 
     setIsLoading(true);
     setSelectedAnswer(userAnswer);
@@ -119,7 +109,7 @@ export default function Home() {
         correct: current.correct + (data.isCorrect ? 1 : 0),
         wrong: current.wrong + (data.isCorrect ? 0 : 1),
       }));
-      setStatus('結果を確認したら次へ');
+      setStatus('結果を確認したら次へ進んでください。');
       void loadMistakes();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '判定できませんでした。');
@@ -173,7 +163,7 @@ export default function Home() {
         <div className="quizHeader">
           <span className="promptBadge">{question?.promptLabel || '出題形式'}</span>
           <div className="quizActions">
-            {question?.mode === 'ko_to_ja' ? (
+            {question ? (
               <button
                 className="audioButton"
                 disabled={isLoading}
@@ -257,12 +247,15 @@ export default function Home() {
       <aside className="historyPanel">
         <div>
           <h2>間違えた単語</h2>
-          <p>{mistakes.count ? `累計 ${mistakes.count} 件` : 'まだありません'}</p>
+          <p>{mistakes.count ? `未解決 ${mistakes.count} 件` : '未解決はありません'}</p>
         </div>
+        <Link className="reviewLink" href="/mistakes">
+          間違えた単語ページへ
+        </Link>
         {mistakes.recent.length ? (
           <ul>
-            {mistakes.recent.map((item, index) => (
-              <li key={`${item.timestamp}-${item.korean}-${index}`}>
+            {mistakes.recent.map((item) => (
+              <li key={`${item.rowNumber}-${item.korean}`}>
                 <strong>{item.korean}</strong>
                 <span>{item.japanese}</span>
               </li>
