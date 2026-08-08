@@ -6,9 +6,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AnswerResult, MistakeItem, QuizMode, QuizQuestion } from '@/lib/types';
 
 const modes: Array<{ value: QuizMode; label: string }> = [
-  { value: 'mixed', label: 'ミックス' },
-  { value: 'ko_to_ja', label: '韓国語→日本語' },
-  { value: 'ja_to_ko', label: '日本語→ハングル' },
+  { value: 'mixed', label: 'MIX' },
+  { value: 'ko_to_ja', label: '韓→日' },
+  { value: 'ja_to_ko', label: '日→韓' },
 ];
 
 export default function MistakesPage() {
@@ -129,9 +129,12 @@ export default function MistakesPage() {
     <main className={result ? 'appShell hasStickyAction' : 'appShell'}>
       <section className="topBar">
         <div>
-          <p className="eyebrow">Review Quiz</p>
+          <div className="titleRow">
+            <p className="eyebrow">Review Quiz</p>
+            <span className="countBadge">{mistakes.length ? `未解決 ${mistakes.length}` : 'Clear'}</span>
+          </div>
           <h1>間違えた単語</h1>
-          <p className="status">{status}</p>
+          <p className="statusPill">{status}</p>
         </div>
         <dl className="scoreBoard" aria-label="復習成績">
           <div>
@@ -155,12 +158,13 @@ export default function MistakesPage() {
         </Link>
       </div>
 
-      <section className="modeRail" aria-label="復習の出題形式">
+      <section className="modeRail" aria-label="復習の出題形式" role="group">
         {modes.map((item) => (
           <button
             className={item.value === mode ? 'modeButton active' : 'modeButton'}
             key={item.value}
             onClick={() => setMode(item.value)}
+            aria-pressed={item.value === mode}
             type="button"
           >
             {item.label}
@@ -189,12 +193,21 @@ export default function MistakesPage() {
           </div>
         </div>
 
-        <div className="questionText compactQuestion" aria-live="polite">
-          {question?.question || (isLoading ? '...' : '未解決が3件以上で復習できます')}
-        </div>
+        {isLoading && !question ? (
+          <div className="questionSkeleton compactSkeleton" aria-label="復習問題を読み込み中">
+            <span />
+            <span />
+          </div>
+        ) : (
+          <div className="questionText compactQuestion" aria-live="polite">
+            {question?.question || '未解決が3件以上で復習できます'}
+          </div>
+        )}
 
-        <div className="choices">
-          {question?.choices.map((choice, index) => (
+        <div className={isLoading && !question ? 'choices skeletonChoices' : 'choices'}>
+          {isLoading && !question
+            ? [0, 1, 2].map((item) => <div className="choiceSkeleton" key={item} />)
+            : question?.choices.map((choice, index) => (
             <button
               className={[
                 'choiceButton',
@@ -211,7 +224,7 @@ export default function MistakesPage() {
               <span className="choiceIndex">{index + 1}</span>
               {choice}
             </button>
-          ))}
+              ))}
         </div>
 
         {result ? (
@@ -230,10 +243,12 @@ export default function MistakesPage() {
             </div>
             <button
               className="detailToggle"
+              aria-expanded={showExplanation}
               onClick={() => setShowExplanation((current) => !current)}
               type="button"
             >
-              {showExplanation ? '解説を閉じる' : '解説を見る'}
+              <span>{showExplanation ? '解説を閉じる' : '解説を見る'}</span>
+              <span className="toggleMark">{showExplanation ? '−' : '+'}</span>
             </button>
             {showExplanation ? (
               <div className="resultGrid">
@@ -265,7 +280,7 @@ export default function MistakesPage() {
       <section className="historyPanel">
         <div>
           <h2>未解決リスト</h2>
-          <p>{mistakes.length ? `${mistakes.length} 件` : 'なし'}</p>
+          <span className="countBadge quiet">{mistakes.length ? `${mistakes.length} 件` : 'なし'}</span>
         </div>
       </section>
     </main>
