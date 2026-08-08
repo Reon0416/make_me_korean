@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { AnswerResult, QuizMode, QuizQuestion } from '@/lib/types';
 
@@ -26,13 +26,11 @@ const modes: Array<{ value: QuizMode; label: string }> = [
 export default function Home() {
   const [mode, setMode] = useState<QuizMode>('mixed');
   const [question, setQuestion] = useState<QuizQuestion | null>(null);
-  const [answer, setAnswer] = useState('');
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [mistakes, setMistakes] = useState<MistakeSummary>({ count: 0, recent: [] });
   const [status, setStatus] = useState('読み込み中...');
   const [isLoading, setIsLoading] = useState(false);
   const [score, setScore] = useState({ total: 0, correct: 0, wrong: 0 });
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const accuracy = useMemo(() => {
     if (!score.total) return 0;
@@ -54,7 +52,6 @@ export default function Home() {
     setStatus('次の問題を読み込み中...');
     setQuestion(null);
     setResult(null);
-    setAnswer('');
 
     try {
       const response = await fetch(`/api/question?mode=${nextMode}`, { cache: 'no-store' });
@@ -78,13 +75,7 @@ export default function Home() {
     void initialize();
   }, [loadMistakes, loadQuestion, mode]);
 
-  useEffect(() => {
-    if (question?.inputType === 'text' && !result) {
-      inputRef.current?.focus();
-    }
-  }, [question, result]);
-
-  async function submit(userAnswer = answer) {
+  async function submit(userAnswer: string) {
     if (!question || result || !userAnswer.trim()) {
       if (!userAnswer.trim()) setStatus('回答を入力してください');
       return;
@@ -115,11 +106,6 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    void submit();
   }
 
   function handleNext() {
@@ -175,39 +161,19 @@ export default function Home() {
           {question?.question || '...'}
         </div>
 
-        {question?.inputType === 'choice' ? (
-          <div className="choices">
-            {question.choices.map((choice) => (
-              <button
-                className="choiceButton"
-                disabled={isLoading || Boolean(result)}
-                key={choice}
-                onClick={() => {
-                  setAnswer(choice);
-                  void submit(choice);
-                }}
-                type="button"
-              >
-                {choice}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <form className="answerForm" onSubmit={handleSubmit}>
-            <input
-              autoComplete="off"
+        <div className="choices">
+          {question?.choices.map((choice, index) => (
+            <button
+              className="choiceButton"
               disabled={isLoading || Boolean(result)}
-              onChange={(event) => setAnswer(event.target.value)}
-              placeholder="日本語で入力"
-              ref={inputRef}
-              type="text"
-              value={answer}
-            />
-            <button disabled={isLoading || Boolean(result)} type="submit">
-              答える
+              key={`${choice}-${index}`}
+              onClick={() => void submit(choice)}
+              type="button"
+            >
+              {choice}
             </button>
-          </form>
-        )}
+          ))}
+        </div>
 
         {result ? (
           <section className={result.isCorrect ? 'resultBox correct' : 'resultBox wrong'}>
