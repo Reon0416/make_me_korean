@@ -77,12 +77,6 @@ export default function Home() {
     void initialize();
   }, [loadMistakes, loadQuestion, mode]);
 
-  useEffect(() => {
-    if (question?.mode === 'ko_to_ja') {
-      speakKorean(question.korean);
-    }
-  }, [question]);
-
   function speakKorean(text: string) {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       setStatus('このブラウザは音声読み上げに対応していません');
