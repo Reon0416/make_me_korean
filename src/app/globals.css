@@ -1,16 +1,18 @@
 :root {
-  --bg: #eef4f1;
+  --bg: #f3f5f1;
   --panel: #ffffff;
-  --panel-soft: #f6faf8;
-  --text: #18201d;
-  --muted: #60706a;
-  --line: #cfdbd6;
-  --primary: #1e6b58;
-  --primary-dark: #124b3d;
-  --accent: #c75032;
+  --panel-soft: #f7f8f4;
+  --text: #171b1f;
+  --muted: #66706c;
+  --line: #d9ded8;
+  --primary: #176b5b;
+  --primary-dark: #0f493f;
+  --accent: #c4573d;
+  --gold: #b9842d;
   --ok: #147646;
   --bad: #b3261e;
-  --shadow: 0 14px 34px rgba(18, 75, 61, 0.12);
+  --shadow: 0 16px 38px rgba(23, 27, 31, 0.1);
+  --soft-shadow: 0 8px 20px rgba(23, 27, 31, 0.07);
 }
 
 * {
@@ -49,7 +51,19 @@ button {
 .topBar {
   display: grid;
   gap: 12px;
+  border: 1px solid rgba(217, 222, 216, 0.9);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: var(--soft-shadow);
+  padding: 14px;
   margin-bottom: 12px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .eyebrow {
@@ -73,6 +87,43 @@ h1 {
   font-size: 13px;
 }
 
+.statusPill {
+  width: fit-content;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(23, 107, 91, 0.16);
+  border-radius: 999px;
+  background: #eef5f1;
+  color: #43504c;
+  margin: 8px 0 0;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.countBadge {
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(196, 87, 61, 0.28);
+  border-radius: 999px;
+  background: #fff3ee;
+  color: #8c321f;
+  padding: 4px 9px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.countBadge.quiet {
+  border-color: rgba(23, 107, 91, 0.2);
+  background: #eef5f1;
+  color: var(--primary-dark);
+}
+
 .scoreBoard {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -84,7 +135,7 @@ h1 {
   min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  background: #ffffff;
   padding: 9px 10px;
 }
 
@@ -104,27 +155,32 @@ h1 {
 .modeRail {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: var(--soft-shadow);
+  padding: 4px;
   margin-bottom: 12px;
 }
 
 .modeButton {
   min-height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
   color: var(--text);
   cursor: pointer;
   padding: 8px 7px;
-  font-size: 12px;
-  font-weight: 750;
+  font-size: 13px;
+  font-weight: 850;
   line-height: 1.2;
 }
 
 .modeButton.active {
-  border-color: rgba(30, 107, 88, 0.54);
   background: var(--primary);
   color: #ffffff;
+  box-shadow: 0 7px 14px rgba(23, 107, 91, 0.24);
 }
 
 .quizPanel,
@@ -136,7 +192,8 @@ h1 {
 }
 
 .quizPanel {
-  padding: 16px;
+  overflow: hidden;
+  padding: 14px;
 }
 
 .quizHeader {
@@ -149,7 +206,11 @@ h1 {
 
 .promptBadge {
   min-width: 0;
-  color: var(--primary-dark);
+  border: 1px solid rgba(185, 132, 45, 0.22);
+  border-radius: 999px;
+  background: #fff8e8;
+  color: #7a571d;
+  padding: 5px 9px;
   font-size: 13px;
   font-weight: 850;
 }
@@ -179,7 +240,7 @@ h1 {
 }
 
 .audioButton {
-  background: #e7f3ef;
+  background: #e8f3f0;
   border-color: rgba(30, 107, 88, 0.28);
   color: var(--primary-dark);
 }
@@ -190,7 +251,7 @@ h1 {
 }
 
 .questionText {
-  min-height: 138px;
+  min-height: 132px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -199,7 +260,57 @@ h1 {
   font-size: clamp(36px, 13vw, 64px);
   font-weight: 900;
   line-height: 1.12;
-  padding: 10px 4px 18px;
+  border: 1px solid rgba(217, 222, 216, 0.72);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 248, 244, 0.92));
+  padding: 14px 8px 18px;
+  margin-bottom: 12px;
+}
+
+.questionSkeleton {
+  min-height: 132px;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  border: 1px solid rgba(217, 222, 216, 0.72);
+  border-radius: 8px;
+  background: #ffffff;
+  margin-bottom: 12px;
+  padding: 18px;
+}
+
+.questionSkeleton span,
+.choiceSkeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf0ec;
+}
+
+.questionSkeleton span {
+  width: min(260px, 64vw);
+  height: 26px;
+}
+
+.questionSkeleton span + span {
+  width: min(180px, 46vw);
+  height: 18px;
+  justify-self: center;
+}
+
+.questionSkeleton span::after,
+.choiceSkeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.78), transparent);
+  animation: shimmer 1.35s infinite;
+}
+
+.compactSkeleton {
+  min-height: 112px;
 }
 
 .choices {
@@ -208,7 +319,7 @@ h1 {
 }
 
 .choiceButton {
-  min-height: 64px;
+  min-height: 62px;
   display: grid;
   grid-template-columns: 34px 1fr;
   align-items: center;
@@ -224,6 +335,10 @@ h1 {
   font-weight: 800;
   line-height: 1.25;
   overflow-wrap: anywhere;
+}
+
+.choiceSkeleton {
+  min-height: 62px;
 }
 
 .choiceButton:active {
@@ -280,6 +395,13 @@ h1 {
   font-size: 19px;
   font-weight: 900;
   overflow-wrap: anywhere;
+}
+
+.resultHeader {
+  border: 1px solid rgba(217, 222, 216, 0.72);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 9px 10px;
 }
 
 .resultBox.correct .resultTitle {
@@ -345,13 +467,27 @@ h1 {
 .detailToggle {
   width: 100%;
   min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #ffffff;
   color: var(--primary-dark);
   cursor: pointer;
+  padding: 8px 11px;
   font-size: 13px;
   font-weight: 850;
+}
+
+.toggleMark {
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #eef5f1;
 }
 
 .historyPanel {
@@ -377,7 +513,7 @@ h1 {
   justify-content: center;
   border: 1px solid rgba(30, 107, 88, 0.28);
   border-radius: 8px;
-  background: #e7f3ef;
+  background: #e8f3f0;
   color: var(--primary-dark);
   padding: 9px 12px;
   text-decoration: none;
@@ -446,7 +582,7 @@ h2 {
 
 .compactQuestion {
   min-height: 112px;
-  font-size: clamp(28px, 10vw, 56px);
+  font-size: clamp(28px, 10vw, 54px);
 }
 
 .emptyText {
@@ -457,6 +593,12 @@ h2 {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.62;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @media (min-width: 720px) {
