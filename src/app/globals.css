@@ -42,6 +42,10 @@ button {
   padding: 14px 12px 28px;
 }
 
+.appShell.hasStickyAction {
+  padding-bottom: 96px;
+}
+
 .topBar {
   display: grid;
   gap: 12px;
@@ -266,9 +270,9 @@ h1 {
 }
 
 .resultBox {
-  margin-top: 16px;
+  margin-top: 12px;
   border-top: 1px solid var(--line);
-  padding-top: 16px;
+  padding-top: 12px;
 }
 
 .resultTitle {
@@ -289,6 +293,7 @@ h1 {
 .resultGrid {
   display: grid;
   gap: 8px;
+  margin-top: 10px;
 }
 
 .resultGrid div {
@@ -325,6 +330,28 @@ h1 {
 
 .nextPrimary:hover {
   background: var(--primary-dark);
+}
+
+.stickyNext {
+  position: fixed;
+  left: 50%;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 20;
+  width: min(536px, calc(100% - 24px));
+  transform: translateX(-50%);
+  box-shadow: 0 12px 26px rgba(18, 75, 61, 0.22);
+}
+
+.detailToggle {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--primary-dark);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 850;
 }
 
 .historyPanel {
