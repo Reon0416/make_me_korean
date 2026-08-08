@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { AnswerResult, MistakeItem, QuizMode, QuizQuestion } from '@/lib/types';
 
@@ -21,6 +21,7 @@ export default function MistakesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState({ total: 0, correct: 0 });
+  const feedbackAudioRef = useRef<AudioContext | null>(null);
 
   const accuracy = useMemo(() => {
     if (!score.total) return 0;
@@ -101,7 +102,7 @@ export default function MistakesPage() {
     return () => window.clearTimeout(timerId);
   }, [isLoading, question, result]);
 
-  function playFeedbackSound(isCorrect: boolean) {
+  const getFeedbackAudioContext = useCallback(() => {
     if (typeof window === 'undefined') return;
 
     const AudioContextClass =
@@ -109,11 +110,52 @@ export default function MistakesPage() {
       (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) return;
 
-    const audioContext = new AudioContextClass();
+    if (!feedbackAudioRef.current || feedbackAudioRef.current.state === 'closed') {
+      feedbackAudioRef.current = new AudioContextClass();
+    }
+
+    if (feedbackAudioRef.current.state === 'suspended') {
+      void feedbackAudioRef.current.resume();
+    }
+
+    return feedbackAudioRef.current;
+  }, []);
+
+  const unlockFeedbackAudio = useCallback(() => {
+    const audioContext = getFeedbackAudioContext();
+    if (!audioContext) return;
+
+    const gain = audioContext.createGain();
+    gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+    gain.connect(audioContext.destination);
+
+    const oscillator = audioContext.createOscillator();
+    oscillator.frequency.setValueAtTime(1, audioContext.currentTime);
+    oscillator.connect(gain);
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.025);
+  }, [getFeedbackAudioContext]);
+
+  useEffect(() => {
+    const unlock = () => unlockFeedbackAudio();
+    window.addEventListener('pointerdown', unlock, { capture: true, passive: true });
+    window.addEventListener('keydown', unlock, { capture: true });
+
+    return () => {
+      window.removeEventListener('pointerdown', unlock, { capture: true });
+      window.removeEventListener('keydown', unlock, { capture: true });
+    };
+  }, [unlockFeedbackAudio]);
+
+  function playFeedbackSound(isCorrect: boolean) {
+    const audioContext = getFeedbackAudioContext();
+    if (!audioContext) return;
+
+    const startAt = audioContext.currentTime + 0.015;
     const gain = audioContext.createGain();
     gain.connect(audioContext.destination);
-    gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.09, audioContext.currentTime + 0.012);
+    gain.gain.setValueAtTime(0.0001, startAt);
+    gain.gain.exponentialRampToValueAtTime(0.11, startAt + 0.018);
 
     const tones = isCorrect
       ? [
@@ -128,15 +170,14 @@ export default function MistakesPage() {
     tones.forEach((tone) => {
       const oscillator = audioContext.createOscillator();
       oscillator.type = isCorrect ? 'sine' : 'triangle';
-      oscillator.frequency.setValueAtTime(tone.frequency, audioContext.currentTime + tone.start);
+      oscillator.frequency.setValueAtTime(tone.frequency, startAt + tone.start);
       oscillator.connect(gain);
-      oscillator.start(audioContext.currentTime + tone.start);
-      oscillator.stop(audioContext.currentTime + tone.start + tone.duration);
+      oscillator.start(startAt + tone.start);
+      oscillator.stop(startAt + tone.start + tone.duration);
     });
 
-    const endTime = audioContext.currentTime + 0.28;
+    const endTime = startAt + 0.28;
     gain.gain.exponentialRampToValueAtTime(0.0001, endTime);
-    window.setTimeout(() => void audioContext.close(), 360);
   }
 
   async function submit(userAnswer: string) {
