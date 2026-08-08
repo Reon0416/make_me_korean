@@ -339,6 +339,31 @@ h1 {
   gap: 12px;
 }
 
+.pageNav {
+  margin: -2px 0 12px;
+}
+
+.reviewLink {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(30, 107, 88, 0.28);
+  border-radius: 8px;
+  background: #e7f3ef;
+  color: var(--primary-dark);
+  padding: 9px 12px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.mutedLink {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: var(--line);
+  color: #34413d;
+}
+
 h2 {
   margin: 0;
   font-size: 16px;
@@ -356,6 +381,11 @@ h2 {
   list-style: none;
   margin: 12px 0 0;
   padding: 0;
+}
+
+.historyPanel .reviewLink {
+  width: 100%;
+  margin-top: 12px;
 }
 
 .historyPanel li {
@@ -376,6 +406,25 @@ h2 {
   color: var(--muted);
   font-size: 13px;
   margin-top: 2px;
+}
+
+.historyPanel li small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.compactQuestion {
+  min-height: 112px;
+  font-size: clamp(28px, 10vw, 56px);
+}
+
+.emptyText {
+  margin-top: 12px;
+  line-height: 1.6;
 }
 
 button:disabled {
