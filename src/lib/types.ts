@@ -11,7 +11,7 @@ export type QuizQuestion = {
   id: string;
   mode: Exclude<QuizMode, 'mixed'>;
   promptLabel: string;
-  inputType: 'text' | 'choice';
+  inputType: 'choice';
   question: string;
   answer: string;
   choices: string[];
@@ -19,6 +19,8 @@ export type QuizQuestion = {
   reading: string;
   japanese: string;
   explanation: string;
+  source?: 'vocabulary' | 'mistake';
+  mistakeRowNumber?: number;
 };
 
 export type AnswerResult = {
@@ -28,4 +30,15 @@ export type AnswerResult = {
   reading: string;
   japanese: string;
   explanation: string;
+  resolvedMistake?: boolean;
+};
+
+export type MistakeItem = VocabularyItem & {
+  rowNumber: number;
+  timestamp: string;
+  mode: string;
+  question: string;
+  userAnswer: string;
+  status: string;
+  resolvedAt: string;
 };
