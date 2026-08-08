@@ -1,10 +1,14 @@
-import type { QuizMode, QuizQuestion, VocabularyItem } from './types';
+import type { MistakeItem, QuizMode, QuizQuestion, VocabularyItem } from './types';
 
 const HEADER_ALIASES = {
   korean: ['韓国語', 'ハングル', '単語', 'korean'],
   reading: ['読み方', '読み', '発音', 'カタカナ'],
   japanese: ['日本語の意味', '日本語', '意味', '訳'],
   explanation: ['解説', '説明', '例文', 'メモ'],
+};
+
+type QuizSourceItem = VocabularyItem & {
+  rowNumber?: number;
 };
 
 export function parseVocabulary(values: string[][]): VocabularyItem[] {
@@ -25,35 +29,11 @@ export function parseVocabulary(values: string[][]): VocabularyItem[] {
 }
 
 export function createQuestion(vocabulary: VocabularyItem[], mode: QuizMode): QuizQuestion {
-  if (vocabulary.length < 3) {
-    throw new Error('3択を作るため、単語データを3行以上入れてください。');
-  }
+  return buildQuestion(vocabulary, mode, 'vocabulary');
+}
 
-  const quizMode =
-    mode === 'ko_to_ja' || mode === 'ja_to_ko'
-      ? mode
-      : Math.random() < 0.5
-        ? 'ko_to_ja'
-        : 'ja_to_ko';
-
-  const item = pickOne(vocabulary);
-  const question = quizMode === 'ko_to_ja' ? item.korean : item.japanese;
-  const answer = quizMode === 'ko_to_ja' ? item.japanese : item.korean;
-  const choiceKey = quizMode === 'ko_to_ja' ? 'japanese' : 'korean';
-
-  return {
-    id: crypto.randomUUID(),
-    mode: quizMode,
-    promptLabel: quizMode === 'ko_to_ja' ? '韓国語 → 日本語' : '日本語 → ハングル',
-    inputType: 'choice',
-    question,
-    answer,
-    choices: buildChoices(vocabulary, item, choiceKey),
-    korean: item.korean,
-    reading: item.reading,
-    japanese: item.japanese,
-    explanation: item.explanation,
-  };
+export function createMistakeQuestion(mistakes: MistakeItem[], mode: QuizMode): QuizQuestion {
+  return buildQuestion(mistakes, mode, 'mistake');
 }
 
 export function isAnswerCorrect(mode: QuizQuestion['mode'], userAnswer: string, correctAnswer: string) {
@@ -63,7 +43,7 @@ export function isAnswerCorrect(mode: QuizQuestion['mode'], userAnswer: string, 
 
   const normalizedUserAnswer = normalize(userAnswer);
   const acceptedAnswers = correctAnswer
-    .split(/[／/、,・|]/)
+    .split(/[、,・/|]/)
     .map(normalize)
     .filter(Boolean);
 
@@ -77,6 +57,45 @@ export function isAnswerCorrect(mode: QuizQuestion['mode'], userAnswer: string, 
 
 export function fallbackExplanation(question: QuizQuestion) {
   return `韓国語: ${question.korean} / 読み方: ${question.reading || '-'} / 意味: ${question.japanese}`;
+}
+
+function buildQuestion(
+  items: QuizSourceItem[],
+  mode: QuizMode,
+  source: QuizQuestion['source'],
+): QuizQuestion {
+  if (items.length < 3) {
+    const target = source === 'mistake' ? '未解決の間違い単語' : '単語データ';
+    throw new Error(`3択を作るため、${target}を3件以上入れてください。`);
+  }
+
+  const quizMode =
+    mode === 'ko_to_ja' || mode === 'ja_to_ko'
+      ? mode
+      : Math.random() < 0.5
+        ? 'ko_to_ja'
+        : 'ja_to_ko';
+
+  const item = pickOne(items);
+  const question = quizMode === 'ko_to_ja' ? item.korean : item.japanese;
+  const answer = quizMode === 'ko_to_ja' ? item.japanese : item.korean;
+  const choiceKey = quizMode === 'ko_to_ja' ? 'japanese' : 'korean';
+
+  return {
+    id: crypto.randomUUID(),
+    mode: quizMode,
+    promptLabel: quizMode === 'ko_to_ja' ? '韓国語 → 日本語' : '日本語 → ハングル',
+    inputType: 'choice',
+    question,
+    answer,
+    choices: buildChoices(items, item, choiceKey),
+    korean: item.korean,
+    reading: item.reading,
+    japanese: item.japanese,
+    explanation: item.explanation,
+    source,
+    mistakeRowNumber: source === 'mistake' ? item.rowNumber : undefined,
+  };
 }
 
 function resolveColumns(header: string[]) {
@@ -100,10 +119,20 @@ function pickOne<T>(items: T[]) {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-function buildChoices(vocabulary: VocabularyItem[], correctItem: VocabularyItem, key: 'korean' | 'japanese') {
-  const distractors = shuffle(vocabulary.filter((item) => item[key] !== correctItem[key]))
-    .slice(0, 2)
-    .map((item) => item[key]);
+function buildChoices(items: QuizSourceItem[], correctItem: QuizSourceItem, key: 'korean' | 'japanese') {
+  const seen = new Set([correctItem[key]]);
+  const distractors = shuffle(items)
+    .map((item) => item[key])
+    .filter((value) => {
+      if (!value || seen.has(value)) return false;
+      seen.add(value);
+      return true;
+    })
+    .slice(0, 2);
+
+  if (distractors.length < 2) {
+    throw new Error('3択を作るため、答えが重複しない単語を3件以上入れてください。');
+  }
 
   return shuffle([correctItem[key], ...distractors]);
 }
@@ -115,7 +144,7 @@ function shuffle<T>(items: T[]) {
 function normalize(value: string) {
   return String(value || '')
     .toLowerCase()
-    .replace(/[！-～]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0))
-    .replace(/[。、,.!！?？\s　~〜～]/g, '')
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0))
+    .replace(/[。、,.!！?？\s　~〜]/g, '')
     .trim();
 }
