@@ -27,6 +27,7 @@ export default function Home() {
   const [mode, setMode] = useState<QuizMode>('mixed');
   const [question, setQuestion] = useState<QuizQuestion | null>(null);
   const [result, setResult] = useState<AnswerResult | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState('');
   const [mistakes, setMistakes] = useState<MistakeSummary>({ count: 0, recent: [] });
   const [status, setStatus] = useState('読み込み中...');
   const [isLoading, setIsLoading] = useState(false);
@@ -52,6 +53,7 @@ export default function Home() {
     setStatus('次の問題を読み込み中...');
     setQuestion(null);
     setResult(null);
+    setSelectedAnswer('');
 
     try {
       const response = await fetch(`/api/question?mode=${nextMode}`, { cache: 'no-store' });
@@ -105,6 +107,7 @@ export default function Home() {
     }
 
     setIsLoading(true);
+    setSelectedAnswer(userAnswer);
     setStatus('判定中...');
 
     try {
@@ -139,7 +142,7 @@ export default function Home() {
     <main className="appShell">
       <section className="topBar">
         <div>
-          <p className="eyebrow">Spreadsheet Quiz</p>
+          <p className="eyebrow">Korean Quiz</p>
           <h1>韓国語単語クイズ</h1>
           <p className="status">{status}</p>
         </div>
@@ -174,7 +177,7 @@ export default function Home() {
 
       <section className="quizPanel">
         <div className="quizHeader">
-          <span>{question?.promptLabel || '出題形式'}</span>
+          <span className="promptBadge">{question?.promptLabel || '出題形式'}</span>
           <div className="quizActions">
             {question?.mode === 'ko_to_ja' ? (
               <button
@@ -184,11 +187,11 @@ export default function Home() {
                 title="韓国語を読み上げる"
                 type="button"
               >
-                聞く
+                音声
               </button>
             ) : null}
             <button className="skipButton" disabled={isLoading} onClick={handleNext} type="button">
-              次の単語
+              スキップ
             </button>
           </div>
         </div>
@@ -200,12 +203,19 @@ export default function Home() {
         <div className="choices">
           {question?.choices.map((choice, index) => (
             <button
-              className="choiceButton"
+              className={[
+                'choiceButton',
+                result && choice === question.answer ? 'correctChoice' : '',
+                result && choice === selectedAnswer && choice !== question.answer ? 'wrongChoice' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
               disabled={isLoading || Boolean(result)}
               key={`${choice}-${index}`}
               onClick={() => void submit(choice)}
               type="button"
             >
+              <span className="choiceIndex">{index + 1}</span>
               {choice}
             </button>
           ))}
@@ -222,7 +232,7 @@ export default function Home() {
                 title="韓国語を読み上げる"
                 type="button"
               >
-                聞く
+                音声
               </button>
             </div>
             <div className="resultGrid">
