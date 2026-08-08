@@ -19,6 +19,7 @@ export default function MistakesPage() {
   const [selectedAnswer, setSelectedAnswer] = useState('');
   const [status, setStatus] = useState('間違えた単語を読み込み中...');
   const [isLoading, setIsLoading] = useState(false);
+  const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState({ total: 0, correct: 0 });
 
   const accuracy = useMemo(() => {
@@ -31,10 +32,13 @@ export default function MistakesPage() {
       const response = await fetch('/api/mistakes/list', { cache: 'no-store' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || '間違えた単語を取得できませんでした。');
-      setMistakes(data.mistakes ?? []);
-      setStatus((data.mistakes ?? []).length ? '復習する単語を選択肢で答えてください。' : '未解決の間違い単語はありません。');
+      const nextMistakes = data.mistakes ?? [];
+      setMistakes(nextMistakes);
+      setStatus(nextMistakes.length ? '復習する単語を選択肢で答えてください。' : '未解決の間違い単語はありません。');
+      return nextMistakes as MistakeItem[];
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '間違えた単語を取得できませんでした。');
+      return [];
     }
   }, []);
 
@@ -43,6 +47,7 @@ export default function MistakesPage() {
     setQuestion(null);
     setResult(null);
     setSelectedAnswer('');
+    setShowExplanation(false);
     setStatus('復習クイズを読み込み中...');
 
     try {
@@ -60,11 +65,14 @@ export default function MistakesPage() {
 
   useEffect(() => {
     async function initialize() {
-      await loadMistakes();
+      const nextMistakes = await loadMistakes();
+      if (nextMistakes.length >= 3) {
+        await loadQuestion(mode);
+      }
     }
 
     void initialize();
-  }, [loadMistakes]);
+  }, [loadMistakes, loadQuestion, mode]);
 
   function speakKorean(text: string) {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
@@ -118,7 +126,7 @@ export default function MistakesPage() {
   }
 
   return (
-    <main className="appShell">
+    <main className={result ? 'appShell hasStickyAction' : 'appShell'}>
       <section className="topBar">
         <div>
           <p className="eyebrow">Review Quiz</p>
@@ -176,13 +184,13 @@ export default function MistakesPage() {
               </button>
             ) : null}
             <button className="skipButton" disabled={isLoading || mistakes.length < 3} onClick={handleNext} type="button">
-              出題
+              次へ
             </button>
           </div>
         </div>
 
         <div className="questionText compactQuestion" aria-live="polite">
-          {question?.question || (mistakes.length >= 3 ? '出題を押してください' : '未解決が3件以上で復習できます')}
+          {question?.question || (isLoading ? '...' : '未解決が3件以上で復習できます')}
         </div>
 
         <div className="choices">
@@ -220,25 +228,34 @@ export default function MistakesPage() {
                 音声
               </button>
             </div>
-            <div className="resultGrid">
-              <div>
-                <span>韓国語</span>
-                <strong>{result.korean}</strong>
+            <button
+              className="detailToggle"
+              onClick={() => setShowExplanation((current) => !current)}
+              type="button"
+            >
+              {showExplanation ? '解説を閉じる' : '解説を見る'}
+            </button>
+            {showExplanation ? (
+              <div className="resultGrid">
+                <div>
+                  <span>韓国語</span>
+                  <strong>{result.korean}</strong>
+                </div>
+                <div>
+                  <span>読み方</span>
+                  <strong>{result.reading || '-'}</strong>
+                </div>
+                <div>
+                  <span>意味</span>
+                  <strong>{result.japanese}</strong>
+                </div>
+                <div>
+                  <span>解説</span>
+                  <strong>{result.explanation || '-'}</strong>
+                </div>
               </div>
-              <div>
-                <span>読み方</span>
-                <strong>{result.reading || '-'}</strong>
-              </div>
-              <div>
-                <span>意味</span>
-                <strong>{result.japanese}</strong>
-              </div>
-              <div>
-                <span>解説</span>
-                <strong>{result.explanation || '-'}</strong>
-              </div>
-            </div>
-            <button className="nextPrimary" disabled={isLoading || mistakes.length < 3} onClick={handleNext} type="button">
+            ) : null}
+            <button className="nextPrimary stickyNext" disabled={isLoading || mistakes.length < 3} onClick={handleNext} type="button">
               次の復習へ
             </button>
           </section>
