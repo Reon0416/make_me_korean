@@ -24,6 +24,7 @@ export default function Home() {
   const [mistakes, setMistakes] = useState<MistakeSummary>({ count: 0, recent: [] });
   const [status, setStatus] = useState('読み込み中...');
   const [isLoading, setIsLoading] = useState(false);
+  const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState({ total: 0, correct: 0, wrong: 0 });
 
   const accuracy = useMemo(() => {
@@ -47,6 +48,7 @@ export default function Home() {
     setQuestion(null);
     setResult(null);
     setSelectedAnswer('');
+    setShowExplanation(false);
 
     try {
       const response = await fetch(`/api/question?mode=${nextMode}`, { cache: 'no-store' });
@@ -123,7 +125,7 @@ export default function Home() {
   }
 
   return (
-    <main className="appShell">
+    <main className={result ? 'appShell hasStickyAction' : 'appShell'}>
       <section className="topBar">
         <div>
           <p className="eyebrow">Korean Quiz</p>
@@ -219,25 +221,34 @@ export default function Home() {
                 音声
               </button>
             </div>
-            <div className="resultGrid">
-              <div>
-                <span>韓国語</span>
-                <strong>{result.korean}</strong>
+            <button
+              className="detailToggle"
+              onClick={() => setShowExplanation((current) => !current)}
+              type="button"
+            >
+              {showExplanation ? '解説を閉じる' : '解説を見る'}
+            </button>
+            {showExplanation ? (
+              <div className="resultGrid">
+                <div>
+                  <span>韓国語</span>
+                  <strong>{result.korean}</strong>
+                </div>
+                <div>
+                  <span>読み方</span>
+                  <strong>{result.reading || '-'}</strong>
+                </div>
+                <div>
+                  <span>意味</span>
+                  <strong>{result.japanese}</strong>
+                </div>
+                <div>
+                  <span>解説</span>
+                  <strong>{result.explanation || '-'}</strong>
+                </div>
               </div>
-              <div>
-                <span>読み方</span>
-                <strong>{result.reading || '-'}</strong>
-              </div>
-              <div>
-                <span>意味</span>
-                <strong>{result.japanese}</strong>
-              </div>
-              <div>
-                <span>解説</span>
-                <strong>{result.explanation || '-'}</strong>
-              </div>
-            </div>
-            <button className="nextPrimary" disabled={isLoading} onClick={handleNext} type="button">
+            ) : null}
+            <button className="nextPrimary stickyNext" disabled={isLoading} onClick={handleNext} type="button">
               次へ
             </button>
           </section>
