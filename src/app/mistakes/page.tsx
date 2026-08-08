@@ -267,19 +267,6 @@ export default function MistakesPage() {
           <h2>未解決リスト</h2>
           <p>{mistakes.length ? `${mistakes.length} 件` : 'なし'}</p>
         </div>
-        {mistakes.length ? (
-          <ul className="mistakeList">
-            {mistakes.map((item) => (
-              <li key={`${item.rowNumber}-${item.korean}`}>
-                <strong>{item.korean}</strong>
-                <span>{item.japanese}</span>
-                {item.explanation ? <small>{item.explanation}</small> : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="emptyText">通常クイズで間違えた単語がここに溜まります。</p>
-        )}
       </section>
     </main>
   );
