@@ -150,6 +150,19 @@ h1 {
   margin-bottom: 10px;
 }
 
+.quizActions,
+.resultHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.resultHeader {
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.audioButton,
 .skipButton {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -157,6 +170,13 @@ h1 {
   color: #342e25;
   cursor: pointer;
   padding: 8px 10px;
+}
+
+.audioButton {
+  background: #e8f3ee;
+  border-color: rgba(31, 111, 91, 0.28);
+  color: var(--primary-dark);
+  font-weight: 850;
 }
 
 .questionText {
@@ -238,7 +258,7 @@ h1 {
 }
 
 .resultTitle {
-  margin-bottom: 12px;
+  margin-bottom: 0;
   font-size: 18px;
   font-weight: 900;
 }
