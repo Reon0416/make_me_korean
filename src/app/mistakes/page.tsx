@@ -91,6 +91,44 @@ export default function MistakesPage() {
     window.speechSynthesis.speak(utterance);
   }
 
+  function playFeedbackSound(isCorrect: boolean) {
+    if (typeof window === 'undefined') return;
+
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    const audioContext = new AudioContextClass();
+    const gain = audioContext.createGain();
+    gain.connect(audioContext.destination);
+    gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.09, audioContext.currentTime + 0.012);
+
+    const tones = isCorrect
+      ? [
+          { frequency: 660, start: 0, duration: 0.075 },
+          { frequency: 880, start: 0.085, duration: 0.12 },
+        ]
+      : [
+          { frequency: 220, start: 0, duration: 0.1 },
+          { frequency: 165, start: 0.105, duration: 0.13 },
+        ];
+
+    tones.forEach((tone) => {
+      const oscillator = audioContext.createOscillator();
+      oscillator.type = isCorrect ? 'sine' : 'triangle';
+      oscillator.frequency.setValueAtTime(tone.frequency, audioContext.currentTime + tone.start);
+      oscillator.connect(gain);
+      oscillator.start(audioContext.currentTime + tone.start);
+      oscillator.stop(audioContext.currentTime + tone.start + tone.duration);
+    });
+
+    const endTime = audioContext.currentTime + 0.28;
+    gain.gain.exponentialRampToValueAtTime(0.0001, endTime);
+    window.setTimeout(() => void audioContext.close(), 360);
+  }
+
   async function submit(userAnswer: string) {
     if (!question || result || !userAnswer.trim()) return;
 
@@ -108,6 +146,7 @@ export default function MistakesPage() {
       if (!response.ok) throw new Error(data.message || '判定できませんでした。');
 
       setResult(data);
+      playFeedbackSound(data.isCorrect);
       setScore((current) => ({
         total: current.total + 1,
         correct: current.correct + (data.isCorrect ? 1 : 0),
