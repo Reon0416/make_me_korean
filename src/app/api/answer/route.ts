@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { fallbackExplanation, isAnswerCorrect } from '@/lib/quiz';
-import { appendMistake } from '@/lib/sheets';
+import { appendMistake, markMistakeResolved } from '@/lib/sheets';
 import type { AnswerResult, QuizQuestion } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -16,8 +16,14 @@ export async function POST(request: Request) {
     const userAnswer = String(body.userAnswer || '').trim();
     const question = body.question;
     const isCorrect = isAnswerCorrect(question.mode, userAnswer, question.answer);
+    let resolvedMistake = false;
 
-    if (!isCorrect) {
+    if (question.source === 'mistake') {
+      if (isCorrect && question.mistakeRowNumber) {
+        await markMistakeResolved(question.mistakeRowNumber);
+        resolvedMistake = true;
+      }
+    } else if (!isCorrect) {
       await appendMistake(question, userAnswer);
     }
 
@@ -28,6 +34,7 @@ export async function POST(request: Request) {
       reading: question.reading,
       japanese: question.japanese,
       explanation: question.explanation || fallbackExplanation(question),
+      resolvedMistake,
     };
 
     return NextResponse.json(result);
