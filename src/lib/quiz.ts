@@ -39,15 +39,16 @@ export function createQuestion(vocabulary: VocabularyItem[], mode: QuizMode): Qu
   const item = pickOne(vocabulary);
   const question = quizMode === 'ko_to_ja' ? item.korean : item.japanese;
   const answer = quizMode === 'ko_to_ja' ? item.japanese : item.korean;
+  const choiceKey = quizMode === 'ko_to_ja' ? 'japanese' : 'korean';
 
   return {
     id: crypto.randomUUID(),
     mode: quizMode,
     promptLabel: quizMode === 'ko_to_ja' ? '韓国語 → 日本語' : '日本語 → ハングル',
-    inputType: quizMode === 'ko_to_ja' ? 'text' : 'choice',
+    inputType: 'choice',
     question,
     answer,
-    choices: quizMode === 'ja_to_ko' ? buildChoices(vocabulary, item) : [],
+    choices: buildChoices(vocabulary, item, choiceKey),
     korean: item.korean,
     reading: item.reading,
     japanese: item.japanese,
@@ -56,7 +57,7 @@ export function createQuestion(vocabulary: VocabularyItem[], mode: QuizMode): Qu
 }
 
 export function isAnswerCorrect(mode: QuizQuestion['mode'], userAnswer: string, correctAnswer: string) {
-  if (mode === 'ja_to_ko') {
+  if (mode === 'ja_to_ko' || mode === 'ko_to_ja') {
     return normalize(userAnswer) === normalize(correctAnswer);
   }
 
@@ -99,12 +100,12 @@ function pickOne<T>(items: T[]) {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-function buildChoices(vocabulary: VocabularyItem[], correctItem: VocabularyItem) {
-  const distractors = shuffle(vocabulary.filter((item) => item.korean !== correctItem.korean))
+function buildChoices(vocabulary: VocabularyItem[], correctItem: VocabularyItem, key: 'korean' | 'japanese') {
+  const distractors = shuffle(vocabulary.filter((item) => item[key] !== correctItem[key]))
     .slice(0, 2)
-    .map((item) => item.korean);
+    .map((item) => item[key]);
 
-  return shuffle([correctItem.korean, ...distractors]);
+  return shuffle([correctItem[key], ...distractors]);
 }
 
 function shuffle<T>(items: T[]) {
