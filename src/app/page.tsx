@@ -75,6 +75,29 @@ export default function Home() {
     void initialize();
   }, [loadMistakes, loadQuestion, mode]);
 
+  useEffect(() => {
+    if (question?.mode === 'ko_to_ja') {
+      speakKorean(question.korean);
+    }
+  }, [question]);
+
+  function speakKorean(text: string) {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      setStatus('このブラウザは音声読み上げに対応していません');
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+    const koreanVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith('ko'));
+    if (koreanVoice) utterance.voice = koreanVoice;
+    utterance.lang = 'ko-KR';
+    utterance.rate = 0.82;
+    utterance.pitch = 1;
+    window.speechSynthesis.speak(utterance);
+  }
+
   async function submit(userAnswer: string) {
     if (!question || result || !userAnswer.trim()) {
       if (!userAnswer.trim()) setStatus('回答を入力してください');
@@ -152,9 +175,22 @@ export default function Home() {
       <section className="quizPanel">
         <div className="quizHeader">
           <span>{question?.promptLabel || '出題形式'}</span>
-          <button className="skipButton" disabled={isLoading} onClick={handleNext} type="button">
-            次の単語
-          </button>
+          <div className="quizActions">
+            {question?.mode === 'ko_to_ja' ? (
+              <button
+                className="audioButton"
+                disabled={isLoading}
+                onClick={() => speakKorean(question.korean)}
+                title="韓国語を読み上げる"
+                type="button"
+              >
+                聞く
+              </button>
+            ) : null}
+            <button className="skipButton" disabled={isLoading} onClick={handleNext} type="button">
+              次の単語
+            </button>
+          </div>
         </div>
 
         <div className="questionText" aria-live="polite">
@@ -177,7 +213,18 @@ export default function Home() {
 
         {result ? (
           <section className={result.isCorrect ? 'resultBox correct' : 'resultBox wrong'}>
-            <div className="resultTitle">{result.isCorrect ? '正解' : `不正解：${result.correctAnswer}`}</div>
+            <div className="resultHeader">
+              <div className="resultTitle">{result.isCorrect ? '正解' : `不正解：${result.correctAnswer}`}</div>
+              <button
+                className="audioButton"
+                disabled={isLoading}
+                onClick={() => speakKorean(result.korean)}
+                title="韓国語を読み上げる"
+                type="button"
+              >
+                聞く
+              </button>
+            </div>
             <div className="resultGrid">
               <div>
                 <span>韓国語</span>
