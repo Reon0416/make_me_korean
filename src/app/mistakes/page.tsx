@@ -75,8 +75,12 @@ export default function MistakesPage() {
   }, [loadMistakes, loadQuestion, mode]);
 
   function speakKorean(text: string) {
+    readKorean(text, true);
+  }
+
+  function readKorean(text: string, shouldReportError = false) {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      setStatus('このブラウザは音声読み上げに対応していません。');
+      if (shouldReportError) setStatus('このブラウザは音声読み上げに対応していません。');
       return;
     }
 
@@ -90,6 +94,12 @@ export default function MistakesPage() {
     utterance.pitch = 1;
     window.speechSynthesis.speak(utterance);
   }
+
+  useEffect(() => {
+    if (!question || result || isLoading) return;
+    const timerId = window.setTimeout(() => readKorean(question.korean), 180);
+    return () => window.clearTimeout(timerId);
+  }, [isLoading, question, result]);
 
   function playFeedbackSound(isCorrect: boolean) {
     if (typeof window === 'undefined') return;
