@@ -10,6 +10,11 @@ type MistakeSummary = {
   recent: MistakeItem[];
 };
 
+type QuizProgress = {
+  current: number;
+  total: number;
+};
+
 const modes: Array<{ value: QuizMode; label: string }> = [
   { value: 'mixed', label: 'MIX' },
   { value: 'ko_to_ja', label: '韓→日' },
@@ -25,6 +30,7 @@ export default function Home() {
   const [status, setStatus] = useState('読み込み中...');
   const [isLoading, setIsLoading] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [quizProgress, setQuizProgress] = useState<QuizProgress>({ current: 0, total: 0 });
   const feedbackAudioRef = useRef<AudioContext | null>(null);
   const usedItemKeysRef = useRef<string[]>([]);
 
@@ -32,9 +38,12 @@ export default function Home() {
     if (!nextQuestion.itemKey) return;
 
     const currentKeys = usedItemKeysRef.current;
-    usedItemKeysRef.current = currentKeys.includes(nextQuestion.itemKey)
+    const nextKeys = currentKeys.includes(nextQuestion.itemKey)
       ? [nextQuestion.itemKey]
       : [...currentKeys, nextQuestion.itemKey];
+
+    usedItemKeysRef.current = nextKeys;
+    setQuizProgress({ current: nextKeys.length, total: nextQuestion.totalItems });
   }, []);
 
   const loadMistakes = useCallback(async () => {
@@ -73,6 +82,7 @@ export default function Home() {
   useEffect(() => {
     async function initialize() {
       usedItemKeysRef.current = [];
+      setQuizProgress({ current: 0, total: 0 });
       await loadQuestion(mode);
       await loadMistakes();
     }
@@ -223,6 +233,9 @@ export default function Home() {
         <div>
           <div className="titleRow">
             <p className="eyebrow">Korean Quiz</p>
+            <span className="countBadge">
+              {quizProgress.total ? `${quizProgress.current}問目 / ${quizProgress.total}問中` : '0問目 / 0問中'}
+            </span>
             <span className="countBadge">{mistakes.count ? `未解決 ${mistakes.count}` : 'Clear'}</span>
           </div>
           <h1>韓国語単語クイズ</h1>
