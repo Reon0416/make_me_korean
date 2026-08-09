@@ -1,9 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import AppMenu from '@/app/components/AppMenu';
-import type { AnswerResult, NumberItem, NumberQuizKind, QuizMode, QuizQuestion } from '@/lib/types';
+import type { AnswerResult, NumberQuizKind, QuizMode, QuizQuestion } from '@/lib/types';
 
 const modes: Array<{ value: QuizMode; label: string }> = [
   { value: 'mixed', label: 'MIX' },
@@ -17,11 +18,6 @@ const kinds: Array<{ value: NumberQuizKind; label: string }> = [
   { value: 'native', label: '固有数詞' },
 ];
 
-type NumberLists = {
-  native: NumberItem[];
-  sino: NumberItem[];
-};
-
 export default function NumbersPage() {
   const [mode, setMode] = useState<QuizMode>('mixed');
   const [kind, setKind] = useState<NumberQuizKind>('mixed');
@@ -32,23 +28,12 @@ export default function NumbersPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState({ total: 0, correct: 0, wrong: 0 });
-  const [lists, setLists] = useState<NumberLists>({ native: [], sino: [] });
   const feedbackAudioRef = useRef<AudioContext | null>(null);
 
   const accuracy = useMemo(() => {
     if (!score.total) return 0;
     return Math.round((score.correct / score.total) * 100);
   }, [score]);
-
-  const loadLists = useCallback(async () => {
-    try {
-      const response = await fetch('/api/numbers/list', { cache: 'no-store' });
-      const data = await response.json();
-      if (response.ok) setLists({ native: data.native ?? [], sino: data.sino ?? [] });
-    } catch {
-      // 一覧の取得に失敗しても、クイズは続けられるようにする。
-    }
-  }, []);
 
   const loadQuestion = useCallback(async (nextMode: QuizMode, nextKind: NumberQuizKind) => {
     setIsLoading(true);
@@ -72,12 +57,8 @@ export default function NumbersPage() {
   }, []);
 
   useEffect(() => {
-    async function initialize() {
-      await Promise.all([loadQuestion(mode, kind), loadLists()]);
-    }
-
-    void initialize();
-  }, [kind, loadLists, loadQuestion, mode]);
+    void loadQuestion(mode, kind);
+  }, [kind, loadQuestion, mode]);
 
   function speakKorean(text: string) {
     readKorean(text, true);
@@ -380,42 +361,15 @@ export default function NumbersPage() {
         ) : null}
       </section>
 
-      <section className="studyPanel">
-        <div className="studyHeader">
-          <div>
-            <p className="eyebrow">Number Table</p>
-            <h2>覚える数字</h2>
-          </div>
+      <section className="historyPanel">
+        <div>
+          <h2>覚える数字</h2>
+          <span className="countBadge quiet">別ページ</span>
         </div>
-        <NumberTable title="漢数詞" items={lists.sino} />
-        <NumberTable title="固有数詞" items={lists.native} />
+        <Link className="reviewLink" href="/numbers/table">
+          数字一覧を見る
+        </Link>
       </section>
     </main>
-  );
-}
-
-function NumberTable({ title, items }: { title: string; items: NumberItem[] }) {
-  return (
-    <div className="numberTableBlock">
-      <h3>{title}</h3>
-      <div className="numberTable" role="table" aria-label={`${title}の一覧`}>
-        <div className="numberTableHead" role="row">
-          <span role="columnheader">数字</span>
-          <span role="columnheader">韓国語</span>
-          <span role="columnheader">読み方</span>
-        </div>
-        {items.length ? (
-          items.map((item) => (
-            <div className="numberTableRow" role="row" key={`${item.kind}-${item.value}-${item.korean}`}>
-              <span role="cell">{item.value}</span>
-              <strong role="cell">{item.korean}</strong>
-              <span role="cell">{item.reading || '-'}</span>
-            </div>
-          ))
-        ) : (
-          <p className="emptyText">一覧データを取得できませんでした。</p>
-        )}
-      </div>
-    </div>
   );
 }
