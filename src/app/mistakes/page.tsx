@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import AppMenu from '@/app/components/AppMenu';
@@ -30,6 +29,7 @@ export default function MistakesPage() {
   const feedbackAudioRef = useRef<AudioContext | null>(null);
   const usedItemKeysRef = useRef<string[]>([]);
   const progressPercent = quizProgress.total ? Math.round((quizProgress.current / quizProgress.total) * 100) : 0;
+  const shouldShowStatus = /失敗|できません|対応していません|入れてください/.test(status);
 
   const rememberQuestion = useCallback((nextQuestion: QuizQuestion) => {
     if (!nextQuestion.itemKey) return;
@@ -235,12 +235,10 @@ export default function MistakesPage() {
       <AppMenu active="mistakes" />
       <section className="topBar">
         <div>
-          <div className="titleRow">
-            <p className="eyebrow">Review Quiz</p>
-            <span className="countBadge">
+          <div className="progressHeader">
+            <span className="progressText">
               {quizProgress.total ? `${quizProgress.total}問中 ${quizProgress.current}問目` : '0問中 0問目'}
             </span>
-            <span className="countBadge">{mistakes.length ? `未解決 ${mistakes.length}` : 'Clear'}</span>
           </div>
           <div
             className="progressTrack"
@@ -252,16 +250,9 @@ export default function MistakesPage() {
           >
             <span style={{ width: `${progressPercent}%` }} />
           </div>
-          <h1>間違えた単語</h1>
-          <p className="statusPill">{status}</p>
+          {shouldShowStatus ? <p className="statusLine">{status}</p> : null}
         </div>
       </section>
-
-      <div className="pageNav">
-        <Link className="reviewLink mutedLink" href="/">
-          通常クイズへ戻る
-        </Link>
-      </div>
 
       <section className="modeRail" aria-label="復習の出題形式" role="group">
         {modes.map((item) => (
@@ -380,13 +371,6 @@ export default function MistakesPage() {
             </button>
           </section>
         ) : null}
-      </section>
-
-      <section className="historyPanel">
-        <div>
-          <h2>未解決リスト</h2>
-          <span className="countBadge quiet">{mistakes.length ? `${mistakes.length} 件` : 'なし'}</span>
-        </div>
       </section>
     </main>
   );
