@@ -9,9 +9,10 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const mode = (request.nextUrl.searchParams.get('mode') || 'mixed') as QuizMode;
-    const excludedItemKeys = getExcludedItemKeys(request);
+    const excludedItemKeys = getItemKeysParam(request, 'exclude');
+    const onlyItemKeys = getItemKeysParam(request, 'only');
     const vocabulary = await getVocabulary();
-    return NextResponse.json(createQuestion(vocabulary, mode, excludedItemKeys));
+    return NextResponse.json(createQuestion(vocabulary, mode, { excludedItemKeys, onlyItemKeys }));
   } catch (error) {
     return NextResponse.json(
       { message: error instanceof Error ? error.message : '問題の取得に失敗しました。' },
@@ -20,8 +21,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function getExcludedItemKeys(request: NextRequest) {
-  return (request.nextUrl.searchParams.get('exclude') || '')
+function getItemKeysParam(request: NextRequest, name: string) {
+  return (request.nextUrl.searchParams.get(name) || '')
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean);
