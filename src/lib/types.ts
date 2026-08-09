@@ -1,10 +1,17 @@
 export type QuizMode = 'mixed' | 'ko_to_ja' | 'ja_to_ko';
+export type NumberKind = 'native' | 'sino';
+export type NumberQuizKind = 'mixed' | NumberKind;
 
 export type VocabularyItem = {
   korean: string;
   reading: string;
   japanese: string;
   explanation: string;
+};
+
+export type NumberItem = VocabularyItem & {
+  value: string;
+  kind: NumberKind;
 };
 
 export type QuizQuestion = {
@@ -19,8 +26,10 @@ export type QuizQuestion = {
   reading: string;
   japanese: string;
   explanation: string;
-  source?: 'vocabulary' | 'mistake';
+  source?: 'vocabulary' | 'mistake' | 'number';
   mistakeRowNumber?: number;
+  numberKind?: NumberKind;
+  numberValue?: string;
 };
 
 export type AnswerResult = {
