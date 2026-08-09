@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import AppMenu from '@/app/components/AppMenu';
 import type { AnswerResult, NumberQuizKind, QuizMode, QuizQuestion } from '@/lib/types';
@@ -27,13 +26,7 @@ export default function NumbersPage() {
   const [status, setStatus] = useState('数字クイズを読み込み中...');
   const [isLoading, setIsLoading] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
-  const [score, setScore] = useState({ total: 0, correct: 0, wrong: 0 });
   const feedbackAudioRef = useRef<AudioContext | null>(null);
-
-  const accuracy = useMemo(() => {
-    if (!score.total) return 0;
-    return Math.round((score.correct / score.total) * 100);
-  }, [score]);
 
   const loadQuestion = useCallback(async (nextMode: QuizMode, nextKind: NumberQuizKind) => {
     setIsLoading(true);
@@ -183,11 +176,6 @@ export default function NumbersPage() {
 
       setResult(data);
       playFeedbackSound(data.isCorrect);
-      setScore((current) => ({
-        total: current.total + 1,
-        correct: current.correct + (data.isCorrect ? 1 : 0),
-        wrong: current.wrong + (data.isCorrect ? 0 : 1),
-      }));
       setStatus('結果を確認したら次へ進んでください。');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '判定できませんでした。');
@@ -212,20 +200,6 @@ export default function NumbersPage() {
           <h1>韓国語 数字クイズ</h1>
           <p className="statusPill">{status}</p>
         </div>
-        <dl className="scoreBoard" aria-label="数字クイズ成績">
-          <div>
-            <dt>回答</dt>
-            <dd>{score.total}</dd>
-          </div>
-          <div>
-            <dt>正解</dt>
-            <dd>{score.correct}</dd>
-          </div>
-          <div>
-            <dt>正答率</dt>
-            <dd>{accuracy}%</dd>
-          </div>
-        </dl>
       </section>
 
       <section className="modeRail" aria-label="数字の種類" role="group">
@@ -359,16 +333,6 @@ export default function NumbersPage() {
             </button>
           </section>
         ) : null}
-      </section>
-
-      <section className="historyPanel">
-        <div>
-          <h2>覚える数字</h2>
-          <span className="countBadge quiet">別ページ</span>
-        </div>
-        <Link className="reviewLink" href="/numbers/table">
-          数字一覧を見る
-        </Link>
       </section>
     </main>
   );
