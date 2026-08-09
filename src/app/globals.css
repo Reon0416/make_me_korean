@@ -121,13 +121,14 @@ button {
 
 .titleRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .eyebrow {
-  margin: 0 0 3px;
+  margin: 0 auto 3px 0;
   color: var(--primary-dark);
   font-size: 11px;
   font-weight: 850;
@@ -153,7 +154,6 @@ h1 {
 .progressTrack span {
   position: absolute;
   inset: 0 auto 0 0;
-  min-width: 8px;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--primary), #37a88d 58%, var(--gold));
   box-shadow: 0 0 14px rgba(23, 107, 91, 0.28);
