@@ -11,20 +11,18 @@ type QuizProgress = {
 };
 
 const modes: Array<{ value: QuizMode; label: string }> = [
-  { value: 'mixed', label: 'MIX' },
   { value: 'ko_to_ja', label: '韓→日' },
   { value: 'ja_to_ko', label: '日→韓' },
 ];
 
 const kinds: Array<{ value: NumberQuizKind; label: string }> = [
-  { value: 'mixed', label: 'MIX' },
   { value: 'sino', label: '漢数詞' },
   { value: 'native', label: '固有数詞' },
 ];
 
 export default function NumbersPage() {
-  const [mode, setMode] = useState<QuizMode>('mixed');
-  const [kind, setKind] = useState<NumberQuizKind>('mixed');
+  const [mode, setMode] = useState<QuizMode>('ko_to_ja');
+  const [kind, setKind] = useState<NumberQuizKind>('sino');
   const [question, setQuestion] = useState<QuizQuestion | null>(null);
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState('');
