@@ -112,9 +112,13 @@ function buildQuestion(
 ): QuizQuestion {
   const sourceItems = filterOnlyItems(items, source, options.onlyItemKeys);
 
-  if (sourceItems.length < 3) {
+  if (items.length < 3) {
     const target = source === 'mistake' ? '未解決の間違い単語' : source === 'number' ? '数字データ' : '単語データ';
     throw new Error(`3択を作るため、${target}を3件以上入れてください。`);
+  }
+
+  if (!sourceItems.length) {
+    throw new Error('出題できる問題がありません。');
   }
 
   const quizMode =
@@ -146,7 +150,7 @@ function buildQuestion(
     inputType: 'choice',
     question,
     answer,
-    choices: buildChoices(sourceItems, item, choiceKey),
+    choices: buildChoices(items, item, choiceKey),
     korean: item.korean,
     reading: item.reading,
     japanese: item.japanese,
