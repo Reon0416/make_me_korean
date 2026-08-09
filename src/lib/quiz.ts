@@ -57,17 +57,30 @@ export function parseNumberVocabulary(values: string[][], kind: NumberKind): Num
     .filter((item) => item.value && item.korean && item.japanese);
 }
 
-export function createQuestion(vocabulary: VocabularyItem[], mode: QuizMode): QuizQuestion {
-  return buildQuestion(vocabulary, mode, 'vocabulary');
+export function createQuestion(
+  vocabulary: VocabularyItem[],
+  mode: QuizMode,
+  excludedItemKeys: string[] = [],
+): QuizQuestion {
+  return buildQuestion(vocabulary, mode, 'vocabulary', excludedItemKeys);
 }
 
-export function createMistakeQuestion(mistakes: MistakeItem[], mode: QuizMode): QuizQuestion {
-  return buildQuestion(mistakes, mode, 'mistake');
+export function createMistakeQuestion(
+  mistakes: MistakeItem[],
+  mode: QuizMode,
+  excludedItemKeys: string[] = [],
+): QuizQuestion {
+  return buildQuestion(mistakes, mode, 'mistake', excludedItemKeys);
 }
 
-export function createNumberQuestion(numbers: NumberItem[], mode: QuizMode, kind: NumberQuizKind): QuizQuestion {
+export function createNumberQuestion(
+  numbers: NumberItem[],
+  mode: QuizMode,
+  kind: NumberQuizKind,
+  excludedItemKeys: string[] = [],
+): QuizQuestion {
   const candidates = kind === 'mixed' ? numbers : numbers.filter((item) => item.kind === kind);
-  return buildQuestion(candidates, mode, 'number');
+  return buildQuestion(candidates, mode, 'number', excludedItemKeys);
 }
 
 export function isAnswerCorrect(mode: QuizQuestion['mode'], userAnswer: string, correctAnswer: string) {
@@ -98,6 +111,7 @@ function buildQuestion(
   items: QuizSourceItem[],
   mode: QuizMode,
   source: QuizQuestion['source'],
+  excludedItemKeys: string[] = [],
 ): QuizQuestion {
   if (items.length < 3) {
     const target = source === 'mistake' ? '未解決の間違い単語' : source === 'number' ? '数字データ' : '単語データ';
@@ -111,7 +125,9 @@ function buildQuestion(
         ? 'ko_to_ja'
         : 'ja_to_ko';
 
-  const item = pickOne(items);
+  const excluded = new Set(excludedItemKeys);
+  const eligibleItems = items.filter((candidate) => !excluded.has(getItemKey(candidate, source)));
+  const item = pickOne(eligibleItems.length ? eligibleItems : items);
   const question = quizMode === 'ko_to_ja' ? item.korean : getJapanesePrompt(item, source);
   const answer = quizMode === 'ko_to_ja' ? item.japanese : item.korean;
   const choiceKey = quizMode === 'ko_to_ja' ? 'japanese' : 'korean';
@@ -119,6 +135,7 @@ function buildQuestion(
 
   return {
     id: crypto.randomUUID(),
+    itemKey: getItemKey(item, source),
     mode: quizMode,
     promptLabel:
       source === 'number'
@@ -147,6 +164,24 @@ function getJapanesePrompt(item: QuizSourceItem, source: QuizQuestion['source'])
   }
 
   return item.japanese;
+}
+
+function getItemKey(item: QuizSourceItem, source: QuizQuestion['source']) {
+  const prefix = source ?? 'vocabulary';
+
+  if (source === 'mistake' && item.rowNumber) {
+    return `${prefix}:${item.rowNumber}:${normalizeKey(item.korean)}:${normalizeKey(item.japanese)}`;
+  }
+
+  if (source === 'number') {
+    return `${prefix}:${item.kind ?? 'number'}:${normalizeKey(item.value ?? '')}:${normalizeKey(item.korean)}:${normalizeKey(item.japanese)}`;
+  }
+
+  return `${prefix}:${normalizeKey(item.korean)}:${normalizeKey(item.japanese)}`;
+}
+
+function normalizeKey(value: string) {
+  return normalize(value).replace(/[:|]/g, '');
 }
 
 function resolveColumns(header: string[], options?: { allowNumberFallback?: boolean }) {
