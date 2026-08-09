@@ -168,7 +168,7 @@ export default function Home() {
 
     const startAt = audioContext.currentTime + 0.015;
     const gain = audioContext.createGain();
-    const peakVolume = isCorrect ? 0.26 : 0.11;
+    const peakVolume = 0.65;
     gain.connect(audioContext.destination);
     gain.gain.setValueAtTime(0.0001, startAt);
     gain.gain.exponentialRampToValueAtTime(peakVolume, startAt + 0.018);
