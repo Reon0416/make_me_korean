@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import AppMenu from '@/app/components/AppMenu';
 import type { AnswerResult, MistakeItem, QuizMode, QuizQuestion } from '@/lib/types';
@@ -21,13 +21,7 @@ export default function MistakesPage() {
   const [status, setStatus] = useState('間違えた単語を読み込み中...');
   const [isLoading, setIsLoading] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
-  const [score, setScore] = useState({ total: 0, correct: 0 });
   const feedbackAudioRef = useRef<AudioContext | null>(null);
-
-  const accuracy = useMemo(() => {
-    if (!score.total) return 0;
-    return Math.round((score.correct / score.total) * 100);
-  }, [score]);
 
   const loadMistakes = useCallback(async () => {
     try {
@@ -199,10 +193,6 @@ export default function MistakesPage() {
 
       setResult(data);
       playFeedbackSound(data.isCorrect);
-      setScore((current) => ({
-        total: current.total + 1,
-        correct: current.correct + (data.isCorrect ? 1 : 0),
-      }));
       setStatus(data.resolvedMistake ? '正解です。リストから外しました。' : '結果を確認したら次へ進んでください。');
       await loadMistakes();
     } catch (error) {
@@ -228,20 +218,6 @@ export default function MistakesPage() {
           <h1>間違えた単語</h1>
           <p className="statusPill">{status}</p>
         </div>
-        <dl className="scoreBoard" aria-label="復習成績">
-          <div>
-            <dt>未解決</dt>
-            <dd>{mistakes.length}</dd>
-          </div>
-          <div>
-            <dt>正解</dt>
-            <dd>{score.correct}</dd>
-          </div>
-          <div>
-            <dt>正答率</dt>
-            <dd>{accuracy}%</dd>
-          </div>
-        </dl>
       </section>
 
       <div className="pageNav">
