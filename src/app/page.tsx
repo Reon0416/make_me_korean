@@ -3,12 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import AppMenu from '@/app/components/AppMenu';
-import type { AnswerResult, MistakeItem, QuizMode, QuizQuestion } from '@/lib/types';
-
-type MistakeSummary = {
-  count: number;
-  recent: MistakeItem[];
-};
+import type { AnswerResult, QuizMode, QuizQuestion } from '@/lib/types';
 
 type QuizProgress = {
   current: number;
@@ -26,7 +21,6 @@ export default function Home() {
   const [question, setQuestion] = useState<QuizQuestion | null>(null);
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState('');
-  const [mistakes, setMistakes] = useState<MistakeSummary>({ count: 0, recent: [] });
   const [status, setStatus] = useState('読み込み中...');
   const [isLoading, setIsLoading] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -34,6 +28,7 @@ export default function Home() {
   const feedbackAudioRef = useRef<AudioContext | null>(null);
   const usedItemKeysRef = useRef<string[]>([]);
   const progressPercent = quizProgress.total ? Math.round((quizProgress.current / quizProgress.total) * 100) : 0;
+  const shouldShowStatus = /失敗|できません|対応していません|入れてください/.test(status);
 
   const rememberQuestion = useCallback((nextQuestion: QuizQuestion) => {
     if (!nextQuestion.itemKey) return;
@@ -45,16 +40,6 @@ export default function Home() {
 
     usedItemKeysRef.current = nextKeys;
     setQuizProgress({ current: nextKeys.length, total: nextQuestion.totalItems });
-  }, []);
-
-  const loadMistakes = useCallback(async () => {
-    try {
-      const response = await fetch('/api/mistakes', { cache: 'no-store' });
-      const data = await response.json();
-      if (response.ok) setMistakes(data);
-    } catch {
-      // 履歴の取得に失敗しても、クイズ本体は続けられるようにする。
-    }
   }, []);
 
   const loadQuestion = useCallback(async (nextMode: QuizMode) => {
@@ -85,11 +70,10 @@ export default function Home() {
       usedItemKeysRef.current = [];
       setQuizProgress({ current: 0, total: 0 });
       await loadQuestion(mode);
-      await loadMistakes();
     }
 
     void initialize();
-  }, [loadMistakes, loadQuestion, mode]);
+  }, [loadQuestion, mode]);
 
   function speakKorean(text: string) {
     readKorean(text, true);
@@ -215,7 +199,6 @@ export default function Home() {
       setResult(data);
       playFeedbackSound(data.isCorrect);
       setStatus('結果を確認したら次へ進んでください。');
-      void loadMistakes();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '判定できませんでした。');
     } finally {
@@ -232,12 +215,10 @@ export default function Home() {
       <AppMenu active="vocabulary" />
       <section className="topBar">
         <div>
-          <div className="titleRow">
-            <p className="eyebrow">Korean Quiz</p>
-            <span className="countBadge">
+          <div className="progressHeader">
+            <span className="progressText">
               {quizProgress.total ? `${quizProgress.total}問中 ${quizProgress.current}問目` : '0問中 0問目'}
             </span>
-            <span className="countBadge">{mistakes.count ? `未解決 ${mistakes.count}` : 'Clear'}</span>
           </div>
           <div
             className="progressTrack"
@@ -249,8 +230,7 @@ export default function Home() {
           >
             <span style={{ width: `${progressPercent}%` }} />
           </div>
-          <h1>韓国語単語クイズ</h1>
-          <p className="statusPill">{status}</p>
+          {shouldShowStatus ? <p className="statusLine">{status}</p> : null}
         </div>
       </section>
 
