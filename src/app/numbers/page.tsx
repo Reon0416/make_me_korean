@@ -32,10 +32,25 @@ export default function NumbersPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [quizProgress, setQuizProgress] = useState<QuizProgress>({ current: 0, total: 0 });
+  const [answeredCount, setAnsweredCount] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [wrongItemKeys, setWrongItemKeys] = useState<string[]>([]);
+  const [isComplete, setIsComplete] = useState(false);
   const feedbackAudioRef = useRef<AudioContext | null>(null);
   const usedItemKeysRef = useRef<string[]>([]);
+  const activeItemKeysRef = useRef<string[]>([]);
   const progressPercent = quizProgress.total ? Math.round((quizProgress.current / quizProgress.total) * 100) : 0;
   const shouldShowStatus = /失敗|できません|対応していません|入れてください/.test(status);
+
+  const resetCycle = useCallback((onlyItemKeys: string[] = []) => {
+    activeItemKeysRef.current = onlyItemKeys;
+    usedItemKeysRef.current = [];
+    setQuizProgress({ current: 0, total: onlyItemKeys.length || 0 });
+    setAnsweredCount(0);
+    setCorrectCount(0);
+    setWrongItemKeys([]);
+    setIsComplete(false);
+  }, []);
 
   const rememberQuestion = useCallback((nextQuestion: QuizQuestion) => {
     if (!nextQuestion.itemKey) return;
@@ -59,7 +74,8 @@ export default function NumbersPage() {
 
     try {
       const exclude = encodeURIComponent(usedItemKeysRef.current.join(','));
-      const response = await fetch(`/api/numbers/question?mode=${nextMode}&kind=${nextKind}&exclude=${exclude}`, {
+      const only = encodeURIComponent(activeItemKeysRef.current.join(','));
+      const response = await fetch(`/api/numbers/question?mode=${nextMode}&kind=${nextKind}&exclude=${exclude}&only=${only}`, {
         cache: 'no-store',
       });
       const data = await response.json();
@@ -75,10 +91,9 @@ export default function NumbersPage() {
   }, [rememberQuestion]);
 
   useEffect(() => {
-    usedItemKeysRef.current = [];
-    setQuizProgress({ current: 0, total: 0 });
+    resetCycle();
     void loadQuestion(mode, kind);
-  }, [kind, loadQuestion, mode]);
+  }, [kind, loadQuestion, mode, resetCycle]);
 
   function speakKorean(text: string) {
     readKorean(text, true);
@@ -102,10 +117,10 @@ export default function NumbersPage() {
   }
 
   useEffect(() => {
-    if (!question || result || isLoading) return;
+    if (!question || result || isLoading || isComplete) return;
     const timerId = window.setTimeout(() => readKorean(question.korean), 180);
     return () => window.clearTimeout(timerId);
-  }, [isLoading, question, result]);
+  }, [isComplete, isLoading, question, result]);
 
   const getFeedbackAudioContext = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -186,7 +201,7 @@ export default function NumbersPage() {
   }
 
   async function submit(userAnswer: string) {
-    if (!question || result || !userAnswer.trim()) return;
+    if (!question || result || !userAnswer.trim() || isComplete) return;
 
     setIsLoading(true);
     setSelectedAnswer(userAnswer);
@@ -201,9 +216,18 @@ export default function NumbersPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || '判定できませんでした。');
 
+      const nextAnsweredCount = answeredCount + 1;
+      const nextCorrectCount = correctCount + (data.isCorrect ? 1 : 0);
+      const nextWrongItemKeys = data.isCorrect ? wrongItemKeys : Array.from(new Set([...wrongItemKeys, question.itemKey]));
+      const completed = nextAnsweredCount >= question.totalItems;
+
       setResult(data);
+      setAnsweredCount(nextAnsweredCount);
+      setCorrectCount(nextCorrectCount);
+      setWrongItemKeys(nextWrongItemKeys);
+      setIsComplete(completed);
       playFeedbackSound(data.isCorrect);
-      setStatus('結果を確認したら次へ進んでください。');
+      setStatus(completed ? '1周が完了しました。' : '結果を確認したら次へ進んでください。');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '判定できませんでした。');
     } finally {
@@ -215,8 +239,19 @@ export default function NumbersPage() {
     void loadQuestion(mode, kind);
   }
 
+  function handleRestart() {
+    resetCycle();
+    void loadQuestion(mode, kind);
+  }
+
+  function handleRetryWrong() {
+    const retryKeys = [...wrongItemKeys];
+    resetCycle(retryKeys);
+    void loadQuestion(mode, kind);
+  }
+
   return (
-    <main className={result ? 'appShell hasStickyAction' : 'appShell'}>
+    <main className={result && !isComplete ? 'appShell hasStickyAction' : 'appShell'}>
       <AppMenu active="numbers" />
       <section className="topBar">
         <div>
@@ -268,108 +303,120 @@ export default function NumbersPage() {
       </section>
 
       <section className="quizPanel">
-        <div className="quizHeader">
-          <span className="promptBadge">{question?.promptLabel || '数字クイズ'}</span>
-          <div className="quizActions">
-            {question ? (
-              <button
-                className="audioButton"
-                disabled={isLoading}
-                onClick={() => speakKorean(question.korean)}
-                title="韓国語を読み上げる"
-                type="button"
-              >
-                音声
-              </button>
-            ) : null}
-            <button className="skipButton" disabled={isLoading} onClick={handleNext} type="button">
-              スキップ
-            </button>
-          </div>
-        </div>
-
-        {isLoading && !question ? (
-          <div className="questionSkeleton compactSkeleton" aria-label="数字問題を読み込み中">
-            <span />
-            <span />
-          </div>
-        ) : (
-          <div className="questionText compactQuestion" aria-live="polite">
-            {question?.question || '...'}
-          </div>
-        )}
-
-        <div className={isLoading && !question ? 'choices skeletonChoices' : 'choices'}>
-          {isLoading && !question
-            ? [0, 1, 2].map((item) => <div className="choiceSkeleton" key={item} />)
-            : question?.choices.map((choice, index) => (
-            <button
-              className={[
-                'choiceButton',
-                result && choice === question.answer ? 'correctChoice' : '',
-                result && choice === selectedAnswer && choice !== question.answer ? 'wrongChoice' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              disabled={isLoading || Boolean(result)}
-              key={`${choice}-${index}`}
-              onClick={() => void submit(choice)}
-              type="button"
-            >
-              <span className="choiceIndex">{index + 1}</span>
-              {choice}
-            </button>
-              ))}
-        </div>
-
-        {result ? (
-          <section className={result.isCorrect ? 'resultBox correct' : 'resultBox wrong'}>
-            <div className="resultHeader">
-              <div className="resultTitle">{result.isCorrect ? '正解' : `不正解：${result.correctAnswer}`}</div>
-              <button
-                className="audioButton"
-                disabled={isLoading}
-                onClick={() => speakKorean(result.korean)}
-                title="韓国語を読み上げる"
-                type="button"
-              >
-                音声
-              </button>
-            </div>
-            <button
-              className="detailToggle"
-              aria-expanded={showExplanation}
-              onClick={() => setShowExplanation((current) => !current)}
-              type="button"
-            >
-              <span>{showExplanation ? '解説を閉じる' : '解説を見る'}</span>
-              <span className="toggleMark">{showExplanation ? '−' : '+'}</span>
-            </button>
-            {showExplanation ? (
-              <div className="resultGrid">
-                <div>
-                  <span>韓国語</span>
-                  <strong>{result.korean}</strong>
-                </div>
-                <div>
-                  <span>読み方</span>
-                  <strong>{result.reading || '-'}</strong>
-                </div>
-                <div>
-                  <span>意味</span>
-                  <strong>{result.japanese}</strong>
-                </div>
-                <div>
-                  <span>解説</span>
-                  <strong>{result.explanation || '-'}</strong>
-                </div>
-              </div>
-            ) : null}
-            <button className="nextPrimary stickyNext" disabled={isLoading} onClick={handleNext} type="button">
-              次へ
+        {isComplete ? (
+          <section className="completionBox">
+            <p>結果</p>
+            <strong>{quizProgress.total}問中 {correctCount}問正解</strong>
+            <button className="nextPrimary" disabled={isLoading} onClick={wrongItemKeys.length ? handleRetryWrong : handleRestart} type="button">
+              {wrongItemKeys.length ? '間違えた問題をもう一度やる' : 'もう一度やる'}
             </button>
           </section>
-        ) : null}
+        ) : (
+          <>
+            <div className="quizHeader">
+              <span className="promptBadge">{question?.promptLabel || '数字クイズ'}</span>
+              <div className="quizActions">
+                {question ? (
+                  <button
+                    className="audioButton"
+                    disabled={isLoading}
+                    onClick={() => speakKorean(question.korean)}
+                    title="韓国語を読み上げる"
+                    type="button"
+                  >
+                    音声
+                  </button>
+                ) : null}
+                <button className="skipButton" disabled={isLoading} onClick={handleNext} type="button">
+                  スキップ
+                </button>
+              </div>
+            </div>
+
+            {isLoading && !question ? (
+              <div className="questionSkeleton compactSkeleton" aria-label="数字問題を読み込み中">
+                <span />
+                <span />
+              </div>
+            ) : (
+              <div className="questionText compactQuestion" aria-live="polite">
+                {question?.question || '...'}
+              </div>
+            )}
+
+            <div className={isLoading && !question ? 'choices skeletonChoices' : 'choices'}>
+              {isLoading && !question
+                ? [0, 1, 2].map((item) => <div className="choiceSkeleton" key={item} />)
+                : question?.choices.map((choice, index) => (
+                <button
+                  className={[
+                    'choiceButton',
+                    result && choice === question.answer ? 'correctChoice' : '',
+                    result && choice === selectedAnswer && choice !== question.answer ? 'wrongChoice' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  disabled={isLoading || Boolean(result)}
+                  key={`${choice}-${index}`}
+                  onClick={() => void submit(choice)}
+                  type="button"
+                >
+                  <span className="choiceIndex">{index + 1}</span>
+                  {choice}
+                </button>
+                  ))}
+            </div>
+
+            {result ? (
+              <section className={result.isCorrect ? 'resultBox correct' : 'resultBox wrong'}>
+                <div className="resultHeader">
+                  <div className="resultTitle">{result.isCorrect ? '正解' : `不正解：${result.correctAnswer}`}</div>
+                  <button
+                    className="audioButton"
+                    disabled={isLoading}
+                    onClick={() => speakKorean(result.korean)}
+                    title="韓国語を読み上げる"
+                    type="button"
+                  >
+                    音声
+                  </button>
+                </div>
+                <button
+                  className="detailToggle"
+                  aria-expanded={showExplanation}
+                  onClick={() => setShowExplanation((current) => !current)}
+                  type="button"
+                >
+                  <span>{showExplanation ? '解説を閉じる' : '解説を見る'}</span>
+                  <span className="toggleMark">{showExplanation ? '−' : '+'}</span>
+                </button>
+                {showExplanation ? (
+                  <div className="resultGrid">
+                    <div>
+                      <span>韓国語</span>
+                      <strong>{result.korean}</strong>
+                    </div>
+                    <div>
+                      <span>読み方</span>
+                      <strong>{result.reading || '-'}</strong>
+                    </div>
+                    <div>
+                      <span>意味</span>
+                      <strong>{result.japanese}</strong>
+                    </div>
+                    <div>
+                      <span>解説</span>
+                      <strong>{result.explanation || '-'}</strong>
+                    </div>
+                  </div>
+                ) : null}
+                <button className="nextPrimary stickyNext" disabled={isLoading} onClick={handleNext} type="button">
+                  次へ
+                </button>
+              </section>
+            ) : null}
+          </>
+        )}
       </section>
     </main>
   );
