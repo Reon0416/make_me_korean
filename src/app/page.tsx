@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import AppMenu from '@/app/components/AppMenu';
 import type { AnswerResult, MistakeItem, QuizMode, QuizQuestion } from '@/lib/types';
 
 type MistakeSummary = {
@@ -216,6 +217,7 @@ export default function Home() {
 
   return (
     <main className={result ? 'appShell hasStickyAction' : 'appShell'}>
+      <AppMenu active="vocabulary" />
       <section className="topBar">
         <div>
           <div className="titleRow">
