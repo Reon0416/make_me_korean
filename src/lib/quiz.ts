@@ -14,6 +14,11 @@ type QuizSourceItem = VocabularyItem & {
   value?: string;
 };
 
+type QuestionOptions = {
+  excludedItemKeys?: string[];
+  onlyItemKeys?: string[];
+};
+
 export function parseVocabulary(values: string[][]): VocabularyItem[] {
   if (values.length < 2) return [];
 
@@ -57,30 +62,22 @@ export function parseNumberVocabulary(values: string[][], kind: NumberKind): Num
     .filter((item) => item.value && item.korean && item.japanese);
 }
 
-export function createQuestion(
-  vocabulary: VocabularyItem[],
-  mode: QuizMode,
-  excludedItemKeys: string[] = [],
-): QuizQuestion {
-  return buildQuestion(vocabulary, mode, 'vocabulary', excludedItemKeys);
+export function createQuestion(vocabulary: VocabularyItem[], mode: QuizMode, options: QuestionOptions = {}): QuizQuestion {
+  return buildQuestion(vocabulary, mode, 'vocabulary', options);
 }
 
-export function createMistakeQuestion(
-  mistakes: MistakeItem[],
-  mode: QuizMode,
-  excludedItemKeys: string[] = [],
-): QuizQuestion {
-  return buildQuestion(mistakes, mode, 'mistake', excludedItemKeys);
+export function createMistakeQuestion(mistakes: MistakeItem[], mode: QuizMode, options: QuestionOptions = {}): QuizQuestion {
+  return buildQuestion(mistakes, mode, 'mistake', options);
 }
 
 export function createNumberQuestion(
   numbers: NumberItem[],
   mode: QuizMode,
   kind: NumberQuizKind,
-  excludedItemKeys: string[] = [],
+  options: QuestionOptions = {},
 ): QuizQuestion {
   const candidates = kind === 'mixed' ? numbers : numbers.filter((item) => item.kind === kind);
-  return buildQuestion(candidates, mode, 'number', excludedItemKeys);
+  return buildQuestion(candidates, mode, 'number', options);
 }
 
 export function isAnswerCorrect(mode: QuizQuestion['mode'], userAnswer: string, correctAnswer: string) {
@@ -111,9 +108,11 @@ function buildQuestion(
   items: QuizSourceItem[],
   mode: QuizMode,
   source: QuizQuestion['source'],
-  excludedItemKeys: string[] = [],
+  options: QuestionOptions = {},
 ): QuizQuestion {
-  if (items.length < 3) {
+  const sourceItems = filterOnlyItems(items, source, options.onlyItemKeys);
+
+  if (sourceItems.length < 3) {
     const target = source === 'mistake' ? '未解決の間違い単語' : source === 'number' ? '数字データ' : '単語データ';
     throw new Error(`3択を作るため、${target}を3件以上入れてください。`);
   }
@@ -125,9 +124,9 @@ function buildQuestion(
         ? 'ko_to_ja'
         : 'ja_to_ko';
 
-  const excluded = new Set(excludedItemKeys);
-  const eligibleItems = items.filter((candidate) => !excluded.has(getItemKey(candidate, source)));
-  const item = pickOne(eligibleItems.length ? eligibleItems : items);
+  const excluded = new Set(options.excludedItemKeys ?? []);
+  const eligibleItems = sourceItems.filter((candidate) => !excluded.has(getItemKey(candidate, source)));
+  const item = pickOne(eligibleItems.length ? eligibleItems : sourceItems);
   const question = quizMode === 'ko_to_ja' ? item.korean : getJapanesePrompt(item, source);
   const answer = quizMode === 'ko_to_ja' ? item.japanese : item.korean;
   const choiceKey = quizMode === 'ko_to_ja' ? 'japanese' : 'korean';
@@ -136,7 +135,7 @@ function buildQuestion(
   return {
     id: crypto.randomUUID(),
     itemKey: getItemKey(item, source),
-    totalItems: items.length,
+    totalItems: sourceItems.length,
     mode: quizMode,
     promptLabel:
       source === 'number'
@@ -147,7 +146,7 @@ function buildQuestion(
     inputType: 'choice',
     question,
     answer,
-    choices: buildChoices(items, item, choiceKey),
+    choices: buildChoices(sourceItems, item, choiceKey),
     korean: item.korean,
     reading: item.reading,
     japanese: item.japanese,
@@ -157,6 +156,13 @@ function buildQuestion(
     numberKind: source === 'number' ? item.kind : undefined,
     numberValue: source === 'number' ? item.value : undefined,
   };
+}
+
+function filterOnlyItems(items: QuizSourceItem[], source: QuizQuestion['source'], onlyItemKeys?: string[]) {
+  if (!onlyItemKeys?.length) return items;
+
+  const only = new Set(onlyItemKeys);
+  return items.filter((item) => only.has(getItemKey(item, source)));
 }
 
 function getJapanesePrompt(item: QuizSourceItem, source: QuizQuestion['source']) {
