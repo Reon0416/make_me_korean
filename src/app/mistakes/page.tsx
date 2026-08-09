@@ -187,7 +187,7 @@ export default function MistakesPage() {
 
     const startAt = audioContext.currentTime + 0.015;
     const gain = audioContext.createGain();
-    const peakVolume = 0.65;
+    const peakVolume = 1.0;
     gain.connect(audioContext.destination);
     gain.gain.setValueAtTime(0.0001, startAt);
     gain.gain.exponentialRampToValueAtTime(peakVolume, startAt + 0.018);
