@@ -27,6 +27,16 @@ export default function NumbersPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const feedbackAudioRef = useRef<AudioContext | null>(null);
+  const usedItemKeysRef = useRef<string[]>([]);
+
+  const rememberQuestion = useCallback((nextQuestion: QuizQuestion) => {
+    if (!nextQuestion.itemKey) return;
+
+    const currentKeys = usedItemKeysRef.current;
+    usedItemKeysRef.current = currentKeys.includes(nextQuestion.itemKey)
+      ? [nextQuestion.itemKey]
+      : [...currentKeys, nextQuestion.itemKey];
+  }, []);
 
   const loadQuestion = useCallback(async (nextMode: QuizMode, nextKind: NumberQuizKind) => {
     setIsLoading(true);
@@ -37,19 +47,24 @@ export default function NumbersPage() {
     setShowExplanation(false);
 
     try {
-      const response = await fetch(`/api/numbers/question?mode=${nextMode}&kind=${nextKind}`, { cache: 'no-store' });
+      const exclude = encodeURIComponent(usedItemKeysRef.current.join(','));
+      const response = await fetch(`/api/numbers/question?mode=${nextMode}&kind=${nextKind}&exclude=${exclude}`, {
+        cache: 'no-store',
+      });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || '数字クイズを取得できませんでした。');
       setQuestion(data);
+      rememberQuestion(data);
       setStatus('3つの選択肢から選んでください。');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '数字クイズを取得できませんでした。');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [rememberQuestion]);
 
   useEffect(() => {
+    usedItemKeysRef.current = [];
     void loadQuestion(mode, kind);
   }, [kind, loadQuestion, mode]);
 
