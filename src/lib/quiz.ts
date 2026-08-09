@@ -136,6 +136,7 @@ function buildQuestion(
   return {
     id: crypto.randomUUID(),
     itemKey: getItemKey(item, source),
+    totalItems: items.length,
     mode: quizMode,
     promptLabel:
       source === 'number'
