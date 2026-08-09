@@ -8,7 +8,27 @@ const vocabularySheetName = process.env.VOCAB_SHEET_NAME || 'シート1';
 const nativeNumberSheetName = process.env.NATIVE_NUMBER_SHEET_NAME || '固有数詞';
 const sinoNumberSheetName = process.env.SINO_NUMBER_SHEET_NAME || '漢数詞';
 const mistakeSheetName = process.env.MISTAKE_SHEET_NAME || '間違えた単語';
-const studyNumberValues = new Set(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '20', '30', '40', '50']);
+const nativeStudyNumberValues = new Set([
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '9',
+  '10',
+  '20',
+  '30',
+  '40',
+  '50',
+  '60',
+  '70',
+  '80',
+  '90',
+]);
+const sinoStudyNumberValues = new Set(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']);
 const mistakeHeaders = [
   '日時',
   '出題形式',
@@ -59,8 +79,14 @@ export async function getNumberStudyLists() {
   const allNumbers = await getAllNumberVocabulary();
 
   return {
-    native: filterStudyNumbers(allNumbers.filter((item) => item.kind === 'native')),
-    sino: filterStudyNumbers(allNumbers.filter((item) => item.kind === 'sino')),
+    native: filterStudyNumbers(
+      allNumbers.filter((item) => item.kind === 'native'),
+      nativeStudyNumberValues,
+    ),
+    sino: filterStudyNumbers(
+      allNumbers.filter((item) => item.kind === 'sino'),
+      sinoStudyNumberValues,
+    ),
   };
 }
 
@@ -84,9 +110,9 @@ async function getNumberSheet(sheetName: string, kind: NumberKind) {
   return parseNumberVocabulary((response.data.values ?? []) as string[][], kind);
 }
 
-function filterStudyNumbers(numbers: NumberItem[]) {
+function filterStudyNumbers(numbers: NumberItem[], allowedValues: Set<string>) {
   return numbers
-    .filter((item) => studyNumberValues.has(normalizeNumberValue(item.value)))
+    .filter((item) => allowedValues.has(normalizeNumberValue(item.value)))
     .sort((a, b) => Number(normalizeNumberValue(a.value)) - Number(normalizeNumberValue(b.value)));
 }
 
