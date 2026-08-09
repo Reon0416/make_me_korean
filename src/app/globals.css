@@ -632,14 +632,31 @@ h2 {
 }
 
 .numberTableRow span,
-.numberTableRow strong {
+.numberTableRow strong,
+.numberSpeakButton {
   min-width: 0;
   overflow-wrap: anywhere;
   line-height: 1.35;
 }
 
-.numberTableRow strong {
+.numberTableRow strong,
+.numberSpeakButton {
   font-size: 17px;
+}
+
+.numberSpeakButton {
+  border: 0;
+  border-radius: 7px;
+  background: #e8f3f0;
+  color: var(--primary-dark);
+  cursor: pointer;
+  padding: 7px 8px;
+  text-align: left;
+  font-weight: 900;
+}
+
+.numberSpeakButton:active {
+  transform: scale(0.99);
 }
 
 .historyPanel p {
