@@ -26,6 +26,16 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const feedbackAudioRef = useRef<AudioContext | null>(null);
+  const usedItemKeysRef = useRef<string[]>([]);
+
+  const rememberQuestion = useCallback((nextQuestion: QuizQuestion) => {
+    if (!nextQuestion.itemKey) return;
+
+    const currentKeys = usedItemKeysRef.current;
+    usedItemKeysRef.current = currentKeys.includes(nextQuestion.itemKey)
+      ? [nextQuestion.itemKey]
+      : [...currentKeys, nextQuestion.itemKey];
+  }, []);
 
   const loadMistakes = useCallback(async () => {
     try {
@@ -46,20 +56,23 @@ export default function Home() {
     setShowExplanation(false);
 
     try {
-      const response = await fetch(`/api/question?mode=${nextMode}`, { cache: 'no-store' });
+      const exclude = encodeURIComponent(usedItemKeysRef.current.join(','));
+      const response = await fetch(`/api/question?mode=${nextMode}&exclude=${exclude}`, { cache: 'no-store' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || '問題を取得できませんでした。');
       setQuestion(data);
+      rememberQuestion(data);
       setStatus('3つの選択肢から選んでください。');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '問題を取得できませんでした。');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [rememberQuestion]);
 
   useEffect(() => {
     async function initialize() {
+      usedItemKeysRef.current = [];
       await loadQuestion(mode);
       await loadMistakes();
     }
