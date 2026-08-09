@@ -6,6 +6,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import AppMenu from '@/app/components/AppMenu';
 import type { AnswerResult, MistakeItem, QuizMode, QuizQuestion } from '@/lib/types';
 
+type QuizProgress = {
+  current: number;
+  total: number;
+};
+
 const modes: Array<{ value: QuizMode; label: string }> = [
   { value: 'mixed', label: 'MIX' },
   { value: 'ko_to_ja', label: '韓→日' },
@@ -21,6 +26,7 @@ export default function MistakesPage() {
   const [status, setStatus] = useState('間違えた単語を読み込み中...');
   const [isLoading, setIsLoading] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [quizProgress, setQuizProgress] = useState<QuizProgress>({ current: 0, total: 0 });
   const feedbackAudioRef = useRef<AudioContext | null>(null);
   const usedItemKeysRef = useRef<string[]>([]);
 
@@ -28,9 +34,12 @@ export default function MistakesPage() {
     if (!nextQuestion.itemKey) return;
 
     const currentKeys = usedItemKeysRef.current;
-    usedItemKeysRef.current = currentKeys.includes(nextQuestion.itemKey)
+    const nextKeys = currentKeys.includes(nextQuestion.itemKey)
       ? [nextQuestion.itemKey]
       : [...currentKeys, nextQuestion.itemKey];
+
+    usedItemKeysRef.current = nextKeys;
+    setQuizProgress({ current: nextKeys.length, total: nextQuestion.totalItems });
   }, []);
 
   const loadMistakes = useCallback(async () => {
@@ -74,6 +83,7 @@ export default function MistakesPage() {
   useEffect(() => {
     async function initialize() {
       usedItemKeysRef.current = [];
+      setQuizProgress({ current: 0, total: 0 });
       const nextMistakes = await loadMistakes();
       if (nextMistakes.length >= 3) {
         await loadQuestion(mode);
@@ -226,6 +236,9 @@ export default function MistakesPage() {
         <div>
           <div className="titleRow">
             <p className="eyebrow">Review Quiz</p>
+            <span className="countBadge">
+              {quizProgress.total ? `${quizProgress.current}問目 / ${quizProgress.total}問中` : '0問目 / 0問中'}
+            </span>
             <span className="countBadge">{mistakes.length ? `未解決 ${mistakes.length}` : 'Clear'}</span>
           </div>
           <h1>間違えた単語</h1>
