@@ -34,6 +34,7 @@ export default function NumbersPage() {
   const [quizProgress, setQuizProgress] = useState<QuizProgress>({ current: 0, total: 0 });
   const feedbackAudioRef = useRef<AudioContext | null>(null);
   const usedItemKeysRef = useRef<string[]>([]);
+  const progressPercent = quizProgress.total ? Math.round((quizProgress.current / quizProgress.total) * 100) : 0;
 
   const rememberQuestion = useCallback((nextQuestion: QuizQuestion) => {
     if (!nextQuestion.itemKey) return;
@@ -221,9 +222,19 @@ export default function NumbersPage() {
           <div className="titleRow">
             <p className="eyebrow">Number Quiz</p>
             <span className="countBadge">
-              {quizProgress.total ? `${quizProgress.current}問目 / ${quizProgress.total}問中` : '0問目 / 0問中'}
+              {quizProgress.total ? `${quizProgress.total}問中 ${quizProgress.current}問目` : '0問中 0問目'}
             </span>
             <span className="countBadge">{kind === 'mixed' ? 'MIX' : kind === 'sino' ? '漢数詞' : '固有数詞'}</span>
+          </div>
+          <div
+            className="progressTrack"
+            aria-label="この周回の進捗"
+            aria-valuemax={100}
+            aria-valuemin={0}
+            aria-valuenow={progressPercent}
+            role="progressbar"
+          >
+            <span style={{ width: `${progressPercent}%` }} />
           </div>
           <h1>韓国語 数字クイズ</h1>
           <p className="statusPill">{status}</p>
