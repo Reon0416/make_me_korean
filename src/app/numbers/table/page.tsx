@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
 import AppMenu from '@/app/components/AppMenu';
@@ -25,7 +24,7 @@ export default function NumberTablePage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || '数字一覧を取得できませんでした。');
       setLists({ native: data.native ?? [], sino: data.sino ?? [] });
-      setStatus('覚える数字だけを表示しています。');
+      setStatus('ハングルを押すと音声で確認できます。');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '数字一覧を取得できませんでした。');
     } finally {
@@ -36,6 +35,24 @@ export default function NumberTablePage() {
   useEffect(() => {
     void loadLists();
   }, [loadLists]);
+
+  function speakKorean(text: string) {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      setStatus('このブラウザは音声読み上げに対応していません。');
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+    const koreanVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith('ko'));
+    if (koreanVoice) utterance.voice = koreanVoice;
+    utterance.lang = 'ko-KR';
+    utterance.rate = 0.82;
+    utterance.pitch = 1;
+    window.speechSynthesis.speak(utterance);
+    setStatus(`${text} を読み上げています。`);
+  }
 
   return (
     <main className="appShell">
@@ -51,12 +68,6 @@ export default function NumberTablePage() {
         </div>
       </section>
 
-      <div className="pageNav">
-        <Link className="reviewLink mutedLink" href="/numbers">
-          数字クイズへ戻る
-        </Link>
-      </div>
-
       <section className="studyPanel">
         <div className="studyHeader">
           <div>
@@ -65,7 +76,7 @@ export default function NumberTablePage() {
           </div>
           <span className="countBadge quiet">1-10 / 20-90</span>
         </div>
-        <NumberTable items={lists.native} isLoading={isLoading} title="固有数詞" />
+        <NumberTable items={lists.native} isLoading={isLoading} onSpeak={speakKorean} title="固有数詞" />
       </section>
 
       <section className="studyPanel">
@@ -76,13 +87,23 @@ export default function NumberTablePage() {
           </div>
           <span className="countBadge quiet">1-10</span>
         </div>
-        <NumberTable items={lists.sino} isLoading={isLoading} title="漢数詞" />
+        <NumberTable items={lists.sino} isLoading={isLoading} onSpeak={speakKorean} title="漢数詞" />
       </section>
     </main>
   );
 }
 
-function NumberTable({ items, isLoading, title }: { items: NumberItem[]; isLoading: boolean; title: string }) {
+function NumberTable({
+  items,
+  isLoading,
+  onSpeak,
+  title,
+}: {
+  items: NumberItem[];
+  isLoading: boolean;
+  onSpeak: (text: string) => void;
+  title: string;
+}) {
   return (
     <div className="numberTableBlock">
       <div className="numberTable" role="table" aria-label={`${title}の一覧`}>
@@ -95,7 +116,14 @@ function NumberTable({ items, isLoading, title }: { items: NumberItem[]; isLoadi
           items.map((item) => (
             <div className="numberTableRow" role="row" key={`${item.kind}-${item.value}-${item.korean}`}>
               <span role="cell">{item.value}</span>
-              <strong role="cell">{item.korean}</strong>
+              <button
+                className="numberSpeakButton"
+                onClick={() => onSpeak(item.korean)}
+                title={`${item.korean}を読み上げる`}
+                type="button"
+              >
+                {item.korean}
+              </button>
               <span role="cell">{item.reading || '-'}</span>
             </div>
           ))
