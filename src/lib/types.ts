@@ -17,6 +17,7 @@ export type NumberItem = VocabularyItem & {
 export type QuizQuestion = {
   id: string;
   itemKey: string;
+  totalItems: number;
   mode: Exclude<QuizMode, 'mixed'>;
   promptLabel: string;
   inputType: 'choice';
