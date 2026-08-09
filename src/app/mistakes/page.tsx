@@ -194,8 +194,9 @@ export default function MistakesPage() {
 
     const tones = isCorrect
       ? [
-          { frequency: 660, start: 0, duration: 0.075 },
-          { frequency: 880, start: 0.085, duration: 0.12 },
+          { frequency: 740, start: 0, duration: 0.055 },
+          { frequency: 932, start: 0.058, duration: 0.07 },
+          { frequency: 1175, start: 0.12, duration: 0.13 },
         ]
       : [
           { frequency: 220, start: 0, duration: 0.1 },
