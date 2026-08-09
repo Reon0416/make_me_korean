@@ -22,6 +22,16 @@ export default function MistakesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const feedbackAudioRef = useRef<AudioContext | null>(null);
+  const usedItemKeysRef = useRef<string[]>([]);
+
+  const rememberQuestion = useCallback((nextQuestion: QuizQuestion) => {
+    if (!nextQuestion.itemKey) return;
+
+    const currentKeys = usedItemKeysRef.current;
+    usedItemKeysRef.current = currentKeys.includes(nextQuestion.itemKey)
+      ? [nextQuestion.itemKey]
+      : [...currentKeys, nextQuestion.itemKey];
+  }, []);
 
   const loadMistakes = useCallback(async () => {
     try {
@@ -47,20 +57,23 @@ export default function MistakesPage() {
     setStatus('復習クイズを読み込み中...');
 
     try {
-      const response = await fetch(`/api/review-question?mode=${nextMode}`, { cache: 'no-store' });
+      const exclude = encodeURIComponent(usedItemKeysRef.current.join(','));
+      const response = await fetch(`/api/review-question?mode=${nextMode}&exclude=${exclude}`, { cache: 'no-store' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || '復習クイズを取得できませんでした。');
       setQuestion(data);
+      rememberQuestion(data);
       setStatus('正解した単語はリストから外れます。');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '復習クイズを取得できませんでした。');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [rememberQuestion]);
 
   useEffect(() => {
     async function initialize() {
+      usedItemKeysRef.current = [];
       const nextMistakes = await loadMistakes();
       if (nextMistakes.length >= 3) {
         await loadQuestion(mode);
