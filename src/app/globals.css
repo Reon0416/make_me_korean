@@ -140,6 +140,26 @@ h1 {
   line-height: 1.12;
 }
 
+.progressTrack {
+  position: relative;
+  width: 100%;
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(23, 27, 31, 0.08);
+  box-shadow: inset 0 1px 2px rgba(23, 27, 31, 0.08);
+}
+
+.progressTrack span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  min-width: 8px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary), #37a88d 58%, var(--gold));
+  box-shadow: 0 0 14px rgba(23, 107, 91, 0.28);
+  transition: width 260ms ease;
+}
+
 .status {
   min-height: 20px;
   margin: 6px 0 0;
