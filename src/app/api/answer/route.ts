@@ -23,7 +23,7 @@ export async function POST(request: Request) {
         await markMistakeResolved(question.mistakeRowNumber);
         resolvedMistake = true;
       }
-    } else if (!isCorrect) {
+    } else if (question.source !== 'number' && !isCorrect) {
       await appendMistake(question, userAnswer);
     }
 
