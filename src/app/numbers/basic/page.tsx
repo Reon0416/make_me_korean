@@ -3,12 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import AppMenu from '@/app/components/AppMenu';
-import type { AnswerResult, QuizMode, QuizQuestion } from '@/lib/types';
+import type { AnswerResult, NumberKind, QuizMode, QuizQuestion } from '@/lib/types';
 
 type QuizProgress = {
   current: number;
   total: number;
 };
+
+const kinds: Array<{ value: NumberKind; label: string }> = [
+  { value: 'sino', label: '漢数詞' },
+  { value: 'native', label: '固有数詞' },
+];
 
 const modes: Array<{ value: QuizMode; label: string }> = [
   { value: 'ko_to_ja', label: '韓→日' },
@@ -16,6 +21,7 @@ const modes: Array<{ value: QuizMode; label: string }> = [
 ];
 
 export default function BasicNumbersPage() {
+  const [kind, setKind] = useState<NumberKind>('sino');
   const [mode, setMode] = useState<QuizMode>('ko_to_ja');
   const [question, setQuestion] = useState<QuizQuestion | null>(null);
   const [result, setResult] = useState<AnswerResult | null>(null);
@@ -56,7 +62,7 @@ export default function BasicNumbersPage() {
     setQuizProgress({ current: nextKeys.length, total: nextQuestion.totalItems });
   }, []);
 
-  const loadQuestion = useCallback(async (nextMode: QuizMode) => {
+  const loadQuestion = useCallback(async (nextMode: QuizMode, nextKind: NumberKind) => {
     setIsLoading(true);
     setStatus('次の数字を読み込み中...');
     setQuestion(null);
@@ -67,14 +73,14 @@ export default function BasicNumbersPage() {
     try {
       const exclude = encodeURIComponent(usedItemKeysRef.current.join(','));
       const only = encodeURIComponent(activeItemKeysRef.current.join(','));
-      const response = await fetch(`/api/numbers/basic-question?mode=${nextMode}&exclude=${exclude}&only=${only}`, {
+      const response = await fetch(`/api/numbers/basic-question?mode=${nextMode}&kind=${nextKind}&exclude=${exclude}&only=${only}`, {
         cache: 'no-store',
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || '基礎数字クイズを取得できませんでした。');
       setQuestion(data);
       rememberQuestion(data);
-      setStatus('一覧に載っている基礎数字だけから出題しています。');
+      setStatus(nextKind === 'sino' ? '漢数詞の基礎数字だけから出題しています。' : '固有数詞の基礎数字だけから出題しています。');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '基礎数字クイズを取得できませんでした。');
     } finally {
@@ -84,8 +90,8 @@ export default function BasicNumbersPage() {
 
   useEffect(() => {
     resetCycle();
-    void loadQuestion(mode);
-  }, [loadQuestion, mode, resetCycle]);
+    void loadQuestion(mode, kind);
+  }, [kind, loadQuestion, mode, resetCycle]);
 
   function speakKorean(text: string) {
     readKorean(text, true);
@@ -230,18 +236,18 @@ export default function BasicNumbersPage() {
   }
 
   function handleNext() {
-    void loadQuestion(mode);
+    void loadQuestion(mode, kind);
   }
 
   function handleRestart() {
     resetCycle();
-    void loadQuestion(mode);
+    void loadQuestion(mode, kind);
   }
 
   function handleRetryWrong() {
     const retryKeys = [...wrongItemKeys];
     resetCycle(retryKeys);
-    void loadQuestion(mode);
+    void loadQuestion(mode, kind);
   }
 
   return (
@@ -268,7 +274,21 @@ export default function BasicNumbersPage() {
         </div>
       </section>
 
-      <section className="modeRail" aria-label="出題形式" role="group">
+      <section className="modeRail" aria-label="基礎数字の種類" role="group">
+        {kinds.map((item) => (
+          <button
+            className={item.value === kind ? 'modeButton active' : 'modeButton'}
+            key={item.value}
+            onClick={() => setKind(item.value)}
+            aria-pressed={item.value === kind}
+            type="button"
+          >
+            {item.label}
+          </button>
+        ))}
+      </section>
+
+      <section className="modeRail secondaryRail" aria-label="出題形式" role="group">
         {modes.map((item) => (
           <button
             className={item.value === mode ? 'modeButton active' : 'modeButton'}
