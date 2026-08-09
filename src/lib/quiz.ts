@@ -1,14 +1,17 @@
-import type { MistakeItem, QuizMode, QuizQuestion, VocabularyItem } from './types';
+import type { MistakeItem, NumberItem, NumberKind, NumberQuizKind, QuizMode, QuizQuestion, VocabularyItem } from './types';
 
 const HEADER_ALIASES = {
-  korean: ['韓国語', 'ハングル', '単語', 'korean'],
+  number: ['数字', '番号', '数', 'number', 'value'],
+  korean: ['韓国語', 'ハングル', '単語', '固有数詞', '漢数詞', 'korean'],
   reading: ['読み方', '読み', '発音', 'カタカナ'],
   japanese: ['日本語の意味', '日本語', '意味', '訳'],
-  explanation: ['解説', '説明', '例文', 'メモ'],
+  explanation: ['解説', '説明', '例文', 'メモ', '使い方'],
 };
 
 type QuizSourceItem = VocabularyItem & {
   rowNumber?: number;
+  kind?: NumberKind;
+  value?: string;
 };
 
 export function parseVocabulary(values: string[][]): VocabularyItem[] {
@@ -28,12 +31,43 @@ export function parseVocabulary(values: string[][]): VocabularyItem[] {
     .filter((item) => item.korean && item.japanese);
 }
 
+export function parseNumberVocabulary(values: string[][], kind: NumberKind): NumberItem[] {
+  if (values.length < 2) return [];
+
+  const header = values[0].map((value) => value.trim());
+  const columns = resolveColumns(header, { allowNumberFallback: true });
+  const numberColumn = findColumn(header, HEADER_ALIASES.number) ?? -1;
+
+  return values
+    .slice(1)
+    .map((row, index) => {
+      const value = numberColumn >= 0 ? String(row[numberColumn] ?? '').trim() : String(index + 1);
+      const japanese = columns.japanese >= 0 ? String(row[columns.japanese] ?? '').trim() : value;
+      const explanation = columns.explanation >= 0 ? String(row[columns.explanation] ?? '').trim() : '';
+
+      return {
+        value,
+        kind,
+        korean: String(row[columns.korean] ?? '').trim(),
+        reading: columns.reading >= 0 ? String(row[columns.reading] ?? '').trim() : '',
+        japanese: japanese || value,
+        explanation,
+      };
+    })
+    .filter((item) => item.value && item.korean && item.japanese);
+}
+
 export function createQuestion(vocabulary: VocabularyItem[], mode: QuizMode): QuizQuestion {
   return buildQuestion(vocabulary, mode, 'vocabulary');
 }
 
 export function createMistakeQuestion(mistakes: MistakeItem[], mode: QuizMode): QuizQuestion {
   return buildQuestion(mistakes, mode, 'mistake');
+}
+
+export function createNumberQuestion(numbers: NumberItem[], mode: QuizMode, kind: NumberQuizKind): QuizQuestion {
+  const candidates = kind === 'mixed' ? numbers : numbers.filter((item) => item.kind === kind);
+  return buildQuestion(candidates, mode, 'number');
 }
 
 export function isAnswerCorrect(mode: QuizQuestion['mode'], userAnswer: string, correctAnswer: string) {
@@ -56,7 +90,8 @@ export function isAnswerCorrect(mode: QuizQuestion['mode'], userAnswer: string, 
 }
 
 export function fallbackExplanation(question: QuizQuestion) {
-  return `韓国語: ${question.korean} / 読み方: ${question.reading || '-'} / 意味: ${question.japanese}`;
+  const numberPrefix = question.numberValue ? `数字: ${question.numberValue} / ` : '';
+  return `${numberPrefix}韓国語: ${question.korean} / 読み方: ${question.reading || '-'} / 意味: ${question.japanese}`;
 }
 
 function buildQuestion(
@@ -65,7 +100,7 @@ function buildQuestion(
   source: QuizQuestion['source'],
 ): QuizQuestion {
   if (items.length < 3) {
-    const target = source === 'mistake' ? '未解決の間違い単語' : '単語データ';
+    const target = source === 'mistake' ? '未解決の間違い単語' : source === 'number' ? '数字データ' : '単語データ';
     throw new Error(`3択を作るため、${target}を3件以上入れてください。`);
   }
 
@@ -77,14 +112,20 @@ function buildQuestion(
         : 'ja_to_ko';
 
   const item = pickOne(items);
-  const question = quizMode === 'ko_to_ja' ? item.korean : item.japanese;
+  const question = quizMode === 'ko_to_ja' ? item.korean : getJapanesePrompt(item, source);
   const answer = quizMode === 'ko_to_ja' ? item.japanese : item.korean;
   const choiceKey = quizMode === 'ko_to_ja' ? 'japanese' : 'korean';
+  const numberLabel = item.kind === 'native' ? '固有数詞' : item.kind === 'sino' ? '漢数詞' : '';
 
   return {
     id: crypto.randomUUID(),
     mode: quizMode,
-    promptLabel: quizMode === 'ko_to_ja' ? '韓国語 → 日本語' : '日本語 → ハングル',
+    promptLabel:
+      source === 'number'
+        ? `${numberLabel} ${quizMode === 'ko_to_ja' ? '韓国語 → 日本語' : '日本語 → ハングル'}`
+        : quizMode === 'ko_to_ja'
+          ? '韓国語 → 日本語'
+          : '日本語 → ハングル',
     inputType: 'choice',
     question,
     answer,
@@ -95,24 +136,38 @@ function buildQuestion(
     explanation: item.explanation,
     source,
     mistakeRowNumber: source === 'mistake' ? item.rowNumber : undefined,
+    numberKind: source === 'number' ? item.kind : undefined,
+    numberValue: source === 'number' ? item.value : undefined,
   };
 }
 
-function resolveColumns(header: string[]) {
-  const find = (aliases: string[]) => aliases.map((alias) => header.indexOf(alias)).find((index) => index >= 0);
-  const korean = find(HEADER_ALIASES.korean);
-  const japanese = find(HEADER_ALIASES.japanese);
+function getJapanesePrompt(item: QuizSourceItem, source: QuizQuestion['source']) {
+  if (source === 'number' && item.value && item.japanese !== item.value) {
+    return `${item.value} / ${item.japanese}`;
+  }
 
-  if (korean === undefined || japanese === undefined) {
+  return item.japanese;
+}
+
+function resolveColumns(header: string[], options?: { allowNumberFallback?: boolean }) {
+  const korean = findColumn(header, HEADER_ALIASES.korean);
+  const japanese = findColumn(header, HEADER_ALIASES.japanese);
+  const number = findColumn(header, HEADER_ALIASES.number);
+
+  if (korean === undefined || (japanese === undefined && !(options?.allowNumberFallback && number !== undefined))) {
     throw new Error('見出し行に「韓国語」と「日本語の意味」を入れてください。');
   }
 
   return {
     korean,
-    japanese,
-    reading: find(HEADER_ALIASES.reading) ?? -1,
-    explanation: find(HEADER_ALIASES.explanation) ?? -1,
+    japanese: japanese ?? -1,
+    reading: findColumn(header, HEADER_ALIASES.reading) ?? -1,
+    explanation: findColumn(header, HEADER_ALIASES.explanation) ?? -1,
   };
+}
+
+function findColumn(header: string[], aliases: string[]) {
+  return aliases.map((alias) => header.indexOf(alias)).find((index) => index >= 0);
 }
 
 function pickOne<T>(items: T[]) {
@@ -131,7 +186,7 @@ function buildChoices(items: QuizSourceItem[], correctItem: QuizSourceItem, key:
     .slice(0, 2);
 
   if (distractors.length < 2) {
-    throw new Error('3択を作るため、答えが重複しない単語を3件以上入れてください。');
+    throw new Error('3択を作るため、答えが重複しないデータを3件以上入れてください。');
   }
 
   return shuffle([correctItem[key], ...distractors]);
