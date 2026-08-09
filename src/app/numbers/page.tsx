@@ -35,6 +35,7 @@ export default function NumbersPage() {
   const feedbackAudioRef = useRef<AudioContext | null>(null);
   const usedItemKeysRef = useRef<string[]>([]);
   const progressPercent = quizProgress.total ? Math.round((quizProgress.current / quizProgress.total) * 100) : 0;
+  const shouldShowStatus = /失敗|できません|対応していません|入れてください/.test(status);
 
   const rememberQuestion = useCallback((nextQuestion: QuizQuestion) => {
     if (!nextQuestion.itemKey) return;
@@ -219,12 +220,10 @@ export default function NumbersPage() {
       <AppMenu active="numbers" />
       <section className="topBar">
         <div>
-          <div className="titleRow">
-            <p className="eyebrow">Number Quiz</p>
-            <span className="countBadge">
+          <div className="progressHeader">
+            <span className="progressText">
               {quizProgress.total ? `${quizProgress.total}問中 ${quizProgress.current}問目` : '0問中 0問目'}
             </span>
-            <span className="countBadge">{kind === 'mixed' ? 'MIX' : kind === 'sino' ? '漢数詞' : '固有数詞'}</span>
           </div>
           <div
             className="progressTrack"
@@ -236,8 +235,7 @@ export default function NumbersPage() {
           >
             <span style={{ width: `${progressPercent}%` }} />
           </div>
-          <h1>韓国語 数字クイズ</h1>
-          <p className="statusPill">{status}</p>
+          {shouldShowStatus ? <p className="statusLine">{status}</p> : null}
         </div>
       </section>
 
