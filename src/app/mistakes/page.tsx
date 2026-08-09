@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import AppMenu from '@/app/components/AppMenu';
 import type { AnswerResult, MistakeItem, QuizMode, QuizQuestion } from '@/lib/types';
 
 const modes: Array<{ value: QuizMode; label: string }> = [
@@ -217,6 +218,7 @@ export default function MistakesPage() {
 
   return (
     <main className={result ? 'appShell hasStickyAction' : 'appShell'}>
+      <AppMenu active="mistakes" />
       <section className="topBar">
         <div>
           <div className="titleRow">
