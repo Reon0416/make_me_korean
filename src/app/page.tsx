@@ -11,13 +11,12 @@ type QuizProgress = {
 };
 
 const modes: Array<{ value: QuizMode; label: string }> = [
-  { value: 'mixed', label: 'MIX' },
   { value: 'ko_to_ja', label: '韓→日' },
   { value: 'ja_to_ko', label: '日→韓' },
 ];
 
 export default function Home() {
-  const [mode, setMode] = useState<QuizMode>('mixed');
+  const [mode, setMode] = useState<QuizMode>('ko_to_ja');
   const [question, setQuestion] = useState<QuizQuestion | null>(null);
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState('');
