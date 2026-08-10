@@ -27,7 +27,7 @@ function playCompletionSound(isPerfect: boolean) {
   const gain = audioContext.createGain();
   gain.connect(audioContext.destination);
   gain.gain.setValueAtTime(0.0001, startAt);
-  gain.gain.exponentialRampToValueAtTime(isPerfect ? 0.85 : 0.55, startAt + 0.025);
+  gain.gain.exponentialRampToValueAtTime(isPerfect ? 0.85 : 0.72, startAt + 0.025);
 
   const tones = isPerfect
     ? [
@@ -37,23 +37,26 @@ function playCompletionSound(isPerfect: boolean) {
         { frequency: 1319, start: 0.27, duration: 0.18 },
       ]
     : [
-        { frequency: 294, start: 0, duration: 0.16 },
-        { frequency: 247, start: 0.16, duration: 0.2 },
-        { frequency: 196, start: 0.34, duration: 0.24 },
+        { frequency: 247, start: 0, duration: 0.16 },
+        { frequency: 220, start: 0.18, duration: 0.18 },
+        { frequency: 196, start: 0.38, duration: 0.2 },
+        { frequency: 165, start: 0.6, duration: 0.22 },
+        { frequency: 147, start: 0.84, duration: 0.26 },
       ];
 
   tones.forEach((tone) => {
     const oscillator = audioContext.createOscillator();
-    oscillator.type = isPerfect ? 'sine' : 'triangle';
+    oscillator.type = isPerfect ? 'sine' : 'sawtooth';
     oscillator.frequency.setValueAtTime(tone.frequency, startAt + tone.start);
+    oscillator.frequency.exponentialRampToValueAtTime(tone.frequency * 0.92, startAt + tone.start + tone.duration);
     oscillator.connect(gain);
     oscillator.start(startAt + tone.start);
     oscillator.stop(startAt + tone.start + tone.duration);
   });
 
-  const endTime = startAt + (isPerfect ? 0.58 : 0.68);
+  const endTime = startAt + (isPerfect ? 0.58 : 1.18);
   gain.gain.exponentialRampToValueAtTime(0.0001, endTime);
-  window.setTimeout(() => void audioContext.close(), 900);
+  window.setTimeout(() => void audioContext.close(), isPerfect ? 900 : 1500);
 }
 
 export default function CompletionEffects() {
