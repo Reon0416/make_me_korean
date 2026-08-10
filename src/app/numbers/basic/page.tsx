@@ -41,6 +41,7 @@ export default function BasicNumbersPage() {
   const usedItemKeysRef = useRef<string[]>([]);
   const activeItemKeysRef = useRef<string[]>([]);
   const progressPercent = quizProgress.total ? Math.round((quizProgress.current / quizProgress.total) * 100) : 0;
+  const hasAnsweredFinalQuestion = Boolean(result && quizProgress.total > 0 && answeredCount >= quizProgress.total);
   const shouldShowStatus = /失敗|できません|対応していません|入れてください/.test(status);
 
   const resetCycle = useCallback((onlyItemKeys: string[] = []) => {
@@ -228,9 +229,9 @@ export default function BasicNumbersPage() {
       setAnsweredCount(nextAnsweredCount);
       setCorrectCount(nextCorrectCount);
       setWrongItemKeys(nextWrongItemKeys);
-      setIsComplete(completed);
+      setIsComplete(false);
       playFeedbackSound(data.isCorrect);
-      setStatus(completed ? '1周が完了しました。' : '結果を確認したら次へ進んでください。');
+      setStatus(completed ? '結果を確認したら結果へ進んでください。' : '結果を確認したら次へ進んでください。');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '判定できませんでした。');
     } finally {
@@ -239,6 +240,11 @@ export default function BasicNumbersPage() {
   }
 
   function handleNext() {
+    if (hasAnsweredFinalQuestion) {
+      setIsComplete(true);
+      return;
+    }
+
     void loadQuestion(mode, kind);
   }
 
@@ -428,7 +434,7 @@ export default function BasicNumbersPage() {
                   </div>
                 ) : null}
                 <button className="nextPrimary stickyNext" disabled={isLoading} onClick={handleNext} type="button">
-                  次へ
+                  {hasAnsweredFinalQuestion ? '結果へ' : '次へ'}
                 </button>
               </section>
             ) : null}
