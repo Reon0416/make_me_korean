@@ -1,0 +1,131 @@
+.homeShell {
+  padding-top: 18px;
+}
+
+.homeHero {
+  display: grid;
+  gap: 7px;
+  padding: 8px 2px 18px;
+}
+
+.homeKicker {
+  margin: 0;
+  color: var(--primary-dark);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.homeHero h1 {
+  margin: 0;
+  color: var(--text);
+  font-family:
+    "SF Pro Rounded", "Arial Rounded MT Bold", "Avenir Next", Inter, ui-rounded, system-ui, sans-serif;
+  font-size: clamp(34px, 10vw, 50px);
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1.05;
+}
+
+.homeHero p:last-child {
+  max-width: 24rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
+.trainingList {
+  display: grid;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 18px 42px rgba(23, 27, 31, 0.08);
+}
+
+.trainingItem {
+  min-height: 94px;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px dashed rgba(23, 27, 31, 0.16);
+  color: var(--text);
+  padding: 14px 14px 14px 12px;
+  text-decoration: none;
+}
+
+.trainingItem:last-child {
+  border-bottom: 0;
+}
+
+.trainingItem:active {
+  background: rgba(232, 243, 240, 0.72);
+}
+
+.trainingMark {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #f1dfd8;
+  color: #b44834;
+  font-size: 21px;
+  font-weight: 950;
+}
+
+.trainingMain {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.trainingMain strong {
+  overflow-wrap: anywhere;
+  font-size: 21px;
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1.18;
+}
+
+.trainingMain span {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.trainingMain i {
+  width: fit-content;
+  display: inline-flex;
+  border-radius: 999px;
+  background: #e8f3f0;
+  color: var(--primary-dark);
+  padding: 4px 8px;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.trainingArrow {
+  color: var(--accent);
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+@media (min-width: 720px) {
+  .homeShell {
+    padding-top: 28px;
+  }
+
+  .trainingItem {
+    min-height: 104px;
+  }
+}
