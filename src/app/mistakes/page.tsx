@@ -199,20 +199,22 @@ export default function MistakesPage() {
           { frequency: 1175, start: 0.12, duration: 0.13 },
         ]
       : [
-          { frequency: 220, start: 0, duration: 0.1 },
-          { frequency: 165, start: 0.105, duration: 0.13 },
+          { frequency: 185, start: 0, duration: 0.13 },
+          { frequency: 155, start: 0.16, duration: 0.13 },
+          { frequency: 138, start: 0.32, duration: 0.13 },
+          { frequency: 123, start: 0.48, duration: 0.18 },
         ];
 
     tones.forEach((tone) => {
       const oscillator = audioContext.createOscillator();
-      oscillator.type = isCorrect ? 'sine' : 'triangle';
+      oscillator.type = isCorrect ? 'sine' : 'sawtooth';
       oscillator.frequency.setValueAtTime(tone.frequency, startAt + tone.start);
       oscillator.connect(gain);
       oscillator.start(startAt + tone.start);
       oscillator.stop(startAt + tone.start + tone.duration);
     });
 
-    const endTime = startAt + 0.28;
+    const endTime = startAt + (isCorrect ? 0.28 : 0.74);
     gain.gain.exponentialRampToValueAtTime(0.0001, endTime);
   }
 
