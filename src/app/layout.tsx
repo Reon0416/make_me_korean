@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+
+import CompletionEffects from './components/CompletionEffects';
 import './globals.css';
 import './icon-controls.css';
 
@@ -10,7 +12,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body>
+        {children}
+        <CompletionEffects />
+      </body>
     </html>
   );
 }
