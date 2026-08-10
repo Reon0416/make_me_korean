@@ -1,0 +1,27 @@
+.skipButton {
+  width: 40px;
+  display: inline-grid;
+  place-items: center;
+  background: #f1f4f2;
+  color: #34413d;
+  font-size: 0;
+  padding: 0;
+}
+
+.skipButton::before,
+.skipButton::after {
+  content: "";
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: 10px solid currentColor;
+}
+
+.skipButton::before {
+  transform: translateX(3px);
+}
+
+.skipButton::after {
+  transform: translateX(-2px);
+}
