@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import AppMenu from '@/app/components/AppMenu';
+import QuestionPrompt from '@/app/components/QuestionPrompt';
+import SpeakerIcon from '@/app/components/SpeakerIcon';
 import type { AnswerResult, MistakeItem, QuizMode, QuizQuestion } from '@/lib/types';
 
 type QuizProgress = {
@@ -24,6 +26,7 @@ export default function MistakesPage() {
   const [status, setStatus] = useState('間違えた単語を読み込み中...');
   const [isLoading, setIsLoading] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [showKana, setShowKana] = useState(false);
   const [quizProgress, setQuizProgress] = useState<QuizProgress>({ current: 0, total: 0 });
   const [answeredCount, setAnsweredCount] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
@@ -316,15 +319,28 @@ export default function MistakesPage() {
               <span className="promptBadge">{question?.promptLabel || '復習クイズ'}</span>
               <div className="quizActions">
                 {question ? (
-                  <button
-                    className="audioButton"
-                    disabled={isLoading}
-                    onClick={() => speakKorean(question.korean)}
-                    title="韓国語を読み上げる"
-                    type="button"
-                  >
-                    音声
-                  </button>
+                  <>
+                    <button
+                      aria-label="韓国語を読み上げる"
+                      className="audioButton"
+                      disabled={isLoading}
+                      onClick={() => speakKorean(question.korean)}
+                      title="韓国語を読み上げる"
+                      type="button"
+                    >
+                      <SpeakerIcon />
+                    </button>
+                    <button
+                      aria-pressed={showKana}
+                      className={showKana ? 'kanaButton active' : 'kanaButton'}
+                      disabled={isLoading}
+                      onClick={() => setShowKana((current) => !current)}
+                      title="かなを表示する"
+                      type="button"
+                    >
+                      かな
+                    </button>
+                  </>
                 ) : null}
                 <button className="skipButton" disabled={isLoading} onClick={handleNext} type="button">
                   次へ
@@ -339,7 +355,7 @@ export default function MistakesPage() {
               </div>
             ) : (
               <div className="questionText compactQuestion" aria-live="polite">
-                {question?.question || '...'}
+                <QuestionPrompt question={question} showKana={showKana} />
               </div>
             )}
 
@@ -371,13 +387,14 @@ export default function MistakesPage() {
                 <div className="resultHeader">
                   <div className="resultTitle">{result.isCorrect ? '正解' : `不正解：${result.correctAnswer}`}</div>
                   <button
+                    aria-label="韓国語を読み上げる"
                     className="audioButton"
                     disabled={isLoading}
                     onClick={() => speakKorean(result.korean)}
                     title="韓国語を読み上げる"
                     type="button"
                   >
-                    音声
+                    <SpeakerIcon />
                   </button>
                 </div>
                 <button
