@@ -405,10 +405,6 @@ h1 {
 }
 
 .questionRuby {
-  display: inline-flex;
-  flex-direction: column-reverse;
-  align-items: center;
-  gap: 7px;
   ruby-position: over;
 }
 
