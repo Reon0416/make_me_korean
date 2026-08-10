@@ -8,6 +8,7 @@ const vocabularySheetName = process.env.VOCAB_SHEET_NAME || 'シート1';
 const nativeNumberSheetName = process.env.NATIVE_NUMBER_SHEET_NAME || '固有数詞';
 const sinoNumberSheetName = process.env.SINO_NUMBER_SHEET_NAME || '漢数詞';
 const mistakeSheetName = process.env.MISTAKE_SHEET_NAME || '間違えた単語';
+const numberCacheTtlMs = 5 * 60 * 1000;
 const nativeStudyNumberValues = new Set([
   '1',
   '2',
@@ -41,6 +42,9 @@ const mistakeHeaders = [
   '状態',
   '解決日時',
 ];
+
+let numberVocabularyCache: { expiresAt: number; items: NumberItem[] } | null = null;
+let numberVocabularyPromise: Promise<NumberItem[]> | null = null;
 
 function getSheetsClient() {
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -91,23 +95,44 @@ export async function getNumberStudyLists() {
 }
 
 async function getAllNumberVocabulary(): Promise<NumberItem[]> {
-  const [native, sino] = await Promise.all([
-    getNumberSheet(nativeNumberSheetName, 'native'),
-    getNumberSheet(sinoNumberSheetName, 'sino'),
-  ]);
+  const now = Date.now();
+  if (numberVocabularyCache && numberVocabularyCache.expiresAt > now) {
+    return numberVocabularyCache.items;
+  }
 
-  return [...native, ...sino];
+  if (!numberVocabularyPromise) {
+    numberVocabularyPromise = loadAllNumberVocabulary()
+      .then((items) => {
+        numberVocabularyCache = { expiresAt: Date.now() + numberCacheTtlMs, items };
+        return items;
+      })
+      .finally(() => {
+        numberVocabularyPromise = null;
+      });
+  }
+
+  return numberVocabularyPromise;
 }
 
-async function getNumberSheet(sheetName: string, kind: NumberKind) {
+async function loadAllNumberVocabulary(): Promise<NumberItem[]> {
   const sheets = getSheetsClient();
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: `${quoteSheetName(sheetName)}!A:Z`,
-    valueRenderOption: 'FORMATTED_VALUE',
-  });
+  const [nativeResponse, sinoResponse] = await Promise.all([
+    sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${quoteSheetName(nativeNumberSheetName)}!A:Z`,
+      valueRenderOption: 'FORMATTED_VALUE',
+    }),
+    sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${quoteSheetName(sinoNumberSheetName)}!A:Z`,
+      valueRenderOption: 'FORMATTED_VALUE',
+    }),
+  ]);
 
-  return parseNumberVocabulary((response.data.values ?? []) as string[][], kind);
+  const native = parseNumberVocabulary((nativeResponse.data.values ?? []) as string[][], 'native');
+  const sino = parseNumberVocabulary((sinoResponse.data.values ?? []) as string[][], 'sino');
+
+  return [...native, ...sino];
 }
 
 function filterStudyNumbers(numbers: NumberItem[], allowedValues: Set<string>) {
