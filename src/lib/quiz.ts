@@ -66,8 +66,13 @@ export function createQuestion(vocabulary: VocabularyItem[], mode: QuizMode, opt
   return buildQuestion(vocabulary, mode, 'vocabulary', options);
 }
 
-export function createMistakeQuestion(mistakes: MistakeItem[], mode: QuizMode, options: QuestionOptions = {}): QuizQuestion {
-  return buildQuestion(mistakes, mode, 'mistake', options);
+export function createMistakeQuestion(
+  mistakes: MistakeItem[],
+  mode: QuizMode,
+  options: QuestionOptions = {},
+  choicePool: VocabularyItem[] = mistakes,
+): QuizQuestion {
+  return buildQuestion(mistakes, mode, 'mistake', options, choicePool);
 }
 
 export function createNumberQuestion(
@@ -109,16 +114,17 @@ function buildQuestion(
   mode: QuizMode,
   source: QuizQuestion['source'],
   options: QuestionOptions = {},
+  choicePool: QuizSourceItem[] = items,
 ): QuizQuestion {
   const sourceItems = filterOnlyItems(items, source, options.onlyItemKeys);
 
-  if (items.length < 3) {
-    const target = source === 'mistake' ? '未解決の間違い単語' : source === 'number' ? '数字データ' : '単語データ';
-    throw new Error(`3択を作るため、${target}を3件以上入れてください。`);
-  }
-
   if (!sourceItems.length) {
     throw new Error('出題できる問題がありません。');
+  }
+
+  if (choicePool.length < 3) {
+    const target = source === 'mistake' ? '選択肢用の単語データ' : source === 'number' ? '数字データ' : '単語データ';
+    throw new Error(`3択を作るため、${target}を3件以上入れてください。`);
   }
 
   const quizMode =
@@ -150,7 +156,7 @@ function buildQuestion(
     inputType: 'choice',
     question,
     answer,
-    choices: buildChoices(items, item, choiceKey),
+    choices: buildChoices(choicePool, item, choiceKey),
     korean: item.korean,
     reading: item.reading,
     japanese: item.japanese,
