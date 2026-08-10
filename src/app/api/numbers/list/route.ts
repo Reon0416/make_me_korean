@@ -6,7 +6,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    return NextResponse.json(await getNumberStudyLists());
+    return NextResponse.json(await getNumberStudyLists(), {
+      headers: {
+        'Cache-Control': 'private, max-age=300',
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { message: error instanceof Error ? error.message : '数字一覧の取得に失敗しました。' },
