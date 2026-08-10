@@ -20,7 +20,7 @@ export default function NumberTablePage() {
     setStatus('数字一覧を読み込み中...');
 
     try {
-      const response = await fetch('/api/numbers/list', { cache: 'no-store' });
+      const response = await fetch('/api/numbers/list', { cache: 'force-cache' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || '数字一覧を取得できませんでした。');
       setLists({ native: data.native ?? [], sino: data.sino ?? [] });
