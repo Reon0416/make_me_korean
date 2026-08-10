@@ -1,11 +1,12 @@
 import Link from 'next/link';
 
 type AppMenuProps = {
-  active: 'vocabulary' | 'numbers' | 'basicNumbers' | 'numberTable' | 'mistakes';
+  active: 'home' | 'vocabulary' | 'numbers' | 'basicNumbers' | 'numberTable' | 'mistakes';
 };
 
 const menuItems = [
-  { key: 'vocabulary', label: '単語クイズ', href: '/' },
+  { key: 'home', label: '学習メニュー', href: '/' },
+  { key: 'vocabulary', label: '単語クイズ', href: '/quiz' },
   { key: 'numbers', label: '数字クイズ', href: '/numbers' },
   { key: 'basicNumbers', label: '基礎数字クイズ', href: '/numbers/basic' },
   { key: 'numberTable', label: '数字一覧', href: '/numbers/table' },
