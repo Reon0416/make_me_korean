@@ -344,6 +344,7 @@ h1 {
 }
 
 .audioButton,
+.kanaButton,
 .skipButton {
   min-height: 40px;
   border: 0;
@@ -356,9 +357,28 @@ h1 {
 }
 
 .audioButton {
+  width: 40px;
+  display: inline-grid;
+  place-items: center;
   background: #e8f3f0;
   border-color: rgba(30, 107, 88, 0.28);
   color: var(--primary-dark);
+  padding: 0;
+}
+
+.speakerIcon {
+  width: 21px;
+  height: 21px;
+}
+
+.kanaButton {
+  background: #fff8e8;
+  color: #7a571d;
+}
+
+.kanaButton.active {
+  background: var(--gold);
+  color: #ffffff;
 }
 
 .skipButton {
@@ -382,6 +402,21 @@ h1 {
     linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(248, 247, 242, 0.86));
   padding: 14px 8px 18px;
   margin-bottom: 12px;
+}
+
+.questionRuby {
+  display: inline-flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 7px;
+  ruby-position: over;
+}
+
+.questionRuby rt {
+  color: var(--muted);
+  font-size: clamp(15px, 4.2vw, 22px);
+  font-weight: 850;
+  line-height: 1.15;
 }
 
 .questionSkeleton {
