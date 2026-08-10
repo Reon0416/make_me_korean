@@ -25,3 +25,16 @@
 .skipButton::after {
   transform: translateX(-2px);
 }
+
+.completionBox.perfectResult strong {
+  color: #d6251f;
+  text-shadow: 0 6px 18px rgba(214, 37, 31, 0.18);
+}
+
+.completionBox.perfectResult p {
+  color: #9c3322;
+}
+
+.completionBox.missedResult strong {
+  color: #34413d;
+}
