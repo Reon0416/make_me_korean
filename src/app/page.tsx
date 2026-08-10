@@ -2,6 +2,8 @@ import Link from 'next/link';
 
 import AppMenu from '@/app/components/AppMenu';
 
+import styles from './page.module.css';
+
 const trainingItems = [
   {
     href: '/quiz',
@@ -42,25 +44,25 @@ const trainingItems = [
 
 export default function Home() {
   return (
-    <main className="appShell homeShell">
+    <main className={`appShell ${styles.homeShell}`}>
       <AppMenu active="home" />
 
-      <section className="homeHero" aria-labelledby="home-title">
-        <p className="homeKicker">Korean training</p>
+      <section className={styles.homeHero} aria-labelledby="home-title">
+        <p className={styles.homeKicker}>Korean training</p>
         <h1 id="home-title">今日は何をやる？</h1>
         <p>やる内容を選ぶと、すぐに問題を始められます。</p>
       </section>
 
-      <section className="trainingList" aria-label="学習メニュー">
+      <section className={styles.trainingList} aria-label="学習メニュー">
         {trainingItems.map((item) => (
-          <Link className="trainingItem" href={item.href} key={item.href}>
-            <span className="trainingMark" aria-hidden="true">{item.mark}</span>
-            <span className="trainingMain">
+          <Link className={styles.trainingItem} href={item.href} key={item.href}>
+            <span className={styles.trainingMark} aria-hidden="true">{item.mark}</span>
+            <span className={styles.trainingMain}>
               <strong>{item.title}</strong>
               <span>{item.description}</span>
               <i>{item.meta}</i>
             </span>
-            <span className="trainingArrow" aria-hidden="true">›</span>
+            <span className={styles.trainingArrow} aria-hidden="true">›</span>
           </Link>
         ))}
       </section>
