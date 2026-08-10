@@ -99,10 +99,7 @@ export default function MistakesPage() {
   useEffect(() => {
     async function initialize() {
       resetCycle();
-      const nextMistakes = await loadMistakes();
-      if (nextMistakes.length >= 3) {
-        await loadQuestion(mode);
-      }
+      await Promise.all([loadMistakes(), loadQuestion(mode)]);
     }
 
     void initialize();
@@ -257,10 +254,7 @@ export default function MistakesPage() {
 
   async function handleRestart() {
     resetCycle();
-    const nextMistakes = await loadMistakes();
-    if (nextMistakes.length >= 3) {
-      void loadQuestion(mode);
-    }
+    await Promise.all([loadMistakes(), loadQuestion(mode)]);
   }
 
   function handleRetryWrong() {
@@ -332,7 +326,7 @@ export default function MistakesPage() {
                     音声
                   </button>
                 ) : null}
-                <button className="skipButton" disabled={isLoading || mistakes.length < 3} onClick={handleNext} type="button">
+                <button className="skipButton" disabled={isLoading} onClick={handleNext} type="button">
                   次へ
                 </button>
               </div>
@@ -345,7 +339,7 @@ export default function MistakesPage() {
               </div>
             ) : (
               <div className="questionText compactQuestion" aria-live="polite">
-                {question?.question || '未解決が3件以上で復習できます'}
+                {question?.question || '...'}
               </div>
             )}
 
@@ -415,7 +409,7 @@ export default function MistakesPage() {
                     </div>
                   </div>
                 ) : null}
-                <button className="nextPrimary stickyNext" disabled={isLoading || mistakes.length < 3} onClick={handleNext} type="button">
+                <button className="nextPrimary stickyNext" disabled={isLoading} onClick={handleNext} type="button">
                   次の復習へ
                 </button>
               </section>
